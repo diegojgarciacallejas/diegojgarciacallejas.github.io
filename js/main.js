@@ -17,6 +17,16 @@ function wantedView() { return MOBILE.roomOnly() && window.Nav && Nav.current ==
 VIEW.crop = FULL_VIEW;
 // el iPhone no hace caso de user-scalable=no: el pellizco se para aquí (solo en el juego; en el CV y el laboratorio se puede ampliar)
 if (MOBILE.touch) ['gesturestart', 'gesturechange'].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false }); });
+// red de seguridad: si aun así la página se amplía (nunca se quiere en el juego), se devuelve al tamaño normal
+if (MOBILE.touch && window.visualViewport) {
+  var zoomFix = 0, meta = document.querySelector('meta[name="viewport"]');
+  visualViewport.addEventListener('resize', function () {
+    if (visualViewport.scale <= 1.01 || zoomFix || !meta) return;
+    var keep = meta.getAttribute('content');
+    meta.setAttribute('content', 'width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
+    zoomFix = setTimeout(function () { meta.setAttribute('content', keep); zoomFix = 0; }, 400);
+  });
+}
 // con pantalla táctil, los textos de ayuda hablan de tocar, no de teclas
 if (MOBILE.touch) {
   CFG.controls = t('Cruceta o toca el suelo para andar  ·  A o toca un objeto para usarlo');

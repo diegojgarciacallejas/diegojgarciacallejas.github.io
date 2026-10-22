@@ -42,6 +42,10 @@ var PAD = (function () {
   abtn.addEventListener('pointerdown', function (e) { e.preventDefault(); abtn.setPointerCapture(e.pointerId); press('a', true); });
   ['pointerup', 'pointercancel'].forEach(function (t) { abtn.addEventListener(t, function () { press('a', false); }); });
   box.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  // Safari amplía la página con dos toques seguidos (justo lo que pasa al dar toques rápidos a una dirección) aunque el CSS
+  // diga lo contrario: se cancela el toque en sí. Los eventos de puntero ya se han enviado antes, así que el mando sigue funcionando
+  ['touchstart', 'touchend', 'touchmove'].forEach(function (ev) { box.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false }); });
+  ['dblclick', 'selectstart', 'dragstart'].forEach(function (ev) { box.addEventListener(ev, function (e) { e.preventDefault(); }); });
   // si la página pierde el foco con algo pulsado, que no se quede pulsado
   window.addEventListener('blur', releaseAll);
   document.addEventListener('visibilitychange', function () { if (document.hidden) releaseAll(); });
