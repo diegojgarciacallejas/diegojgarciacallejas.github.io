@@ -48,17 +48,21 @@ function eachText(list, fn) {
 }
 
 (function () {
-  /* Zoom del navegador: solo cuenta como zoom un cambio de devicePixelRatio justo después de
-     usar Ctrl (Ctrl +, Ctrl -, Ctrl 0, Ctrl + rueda). Otros cambios (otra pantalla, un panel
-     con otra densidad) recalibran la base, así el juego siempre cabe en la ventana. */
+  /* Zoom del navegador: un cambio de devicePixelRatio cuenta como zoom si la ventana sigue midiendo
+     lo mismo en píxeles físicos (con zoom caben menos píxeles CSS, pero la ventana no cambia) o si
+     justo antes se usó Ctrl (Ctrl +, Ctrl -, Ctrl 0, Ctrl + rueda). Lo de la ventana hace falta porque,
+     con un proyecto abierto en el visor, las teclas van a su marco y aquí no se ve el Ctrl.
+     Otros cambios (otra pantalla con otra densidad) recalibran la base: el juego siempre cabe. */
   var baseDpr = window.devicePixelRatio || 1, lastDpr = baseDpr, ctrlAt = -1e9, el = document.getElementById('game');
+  var lastPhys = window.innerWidth * baseDpr;
   window.addEventListener('keydown', function (e) { if (e.ctrlKey || e.metaKey) ctrlAt = Date.now(); }, true);
   window.addEventListener('wheel', function (e) { if (e.ctrlKey) ctrlAt = Date.now(); }, { capture: true, passive: true });
 
   function measure() {
     var dpr = window.devicePixelRatio || 1;
-    if (dpr !== lastDpr && Date.now() - ctrlAt > 1500) baseDpr *= dpr / lastDpr;
-    lastDpr = dpr;
+    var phys = window.innerWidth * dpr, sameWindow = Math.abs(phys - lastPhys) <= Math.max(4, lastPhys * 0.03);
+    if (dpr !== lastDpr && Date.now() - ctrlAt > 1500 && !sameWindow) baseDpr *= dpr / lastDpr;
+    lastDpr = dpr; lastPhys = phys;
     var z = Math.max(0.25, Math.min(5, dpr / baseDpr));
     var c = VIEW.crop, k = Math.min(window.innerWidth * z / c.w, window.innerHeight * z / c.h);
     VIEW.cssW = Math.floor(c.w * k); VIEW.cssH = Math.floor(c.h * k);
