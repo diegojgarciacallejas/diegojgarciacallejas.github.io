@@ -62,12 +62,22 @@ function yardPaint(ctx) {
 }
 
 /* night: sin sol (la luna y las luces van en capas aparte). Apunta las ventanas en YARD.windows para encenderlas de noche */
-function drawYardBase(ctx, night) {
+/* el cielo según la hora de Madrid (los mismos colores que la ventana del cuarto): de día, azul con el sol alto;
+   al atardecer, de morado a naranja con el sol bajo junto a las montañas; de noche, sin sol (la luna va encima) */
+var SKY_BANDS = { day: ['#6fbcf0', '#8fcdf5', '#b3defa', '#d2edfb'], dusk: ['#5d63ad', '#9c7ab4', '#e88a7a', '#f6c27a'] };
+var SUN = { day: { y: 16, c: ['#fff2b0', '#ffe36e', '#fff6c4'] }, dusk: { y: 27, c: ['#ffc58a', '#ff9a5a', '#ffd9a8'] } };   // al atardecer, medio sol asoma sobre la sierra
+function paintSky(p, phase, sunX, bottom, sunY) {
+  var b = SKY_BANDS[phase === 'dusk' ? 'dusk' : 'day'], h = bottom / 4;
+  b.forEach(function (c, i) { p.R(0, Math.round(i * h), YARD.W, Math.ceil(h) + 1, c); });
+  var s = SUN[phase];
+  var y = sunY != null && phase === 'dusk' ? sunY : s && s.y;
+  if (s) { p.disc(sunX, y, 10, s.c[0]); p.disc(sunX, y, 7, s.c[1]); p.disc(sunX - 1, y - 1, 4, s.c[2]); }
+}
+function drawYardBase(ctx, phase) {
   var p = yardPaint(ctx), R = p.R, disc = p.disc, W = YARD.W, x, y, k;
+  if (phase === true) phase = 'night';
   YARD.windows = [];
-  // cielo despejado y sol
-  R(0, 0, W, 14, '#6fbcf0'); R(0, 14, W, 14, '#8fcdf5'); R(0, 28, W, 12, '#b3defa'); R(0, 40, W, 14, '#d2edfb');
-  if (!night) { disc(286, 16, 10, '#fff2b0'); disc(286, 16, 7, '#ffe36e'); disc(285, 15, 4, '#fff6c4'); }
+  paintSky(p, phase || 'day', 286, 54);
   // montañas con nieve
   p.ridge([[0, 34], [30, 24], [62, 16], [92, 28], [120, 14], [150, 26], [184, 12], [214, 24], [246, 18], [280, 30], [320, 22]], 52, '#a7bdd6', 21, '#94accb');
   p.ridge([[0, 40], [44, 30], [80, 38], [118, 28], [160, 40], [200, 30], [240, 38], [282, 26], [320, 34]], 52, '#7393b6', 31, '#6582a6');
@@ -235,8 +245,9 @@ function ensureYardTextures(scene) {
   var tx = scene.textures;
   function canvas(fn) { var c = roomCanvas(YARD.W, YARD.H); fn(c.getContext('2d')); return c; }
   if (!tx.exists('yard_base')) {
-    tx.addCanvas('yard_base_n', canvas(function (c) { drawYardBase(c, true); }));
-    tx.addCanvas('yard_base', canvas(drawYardBase));
+    tx.addCanvas('yard_base_n', canvas(function (c) { drawYardBase(c, 'night'); }));
+    tx.addCanvas('yard_base_d', canvas(function (c) { drawYardBase(c, 'dusk'); }));
+    tx.addCanvas('yard_base', canvas(function (c) { drawYardBase(c, 'day'); }));
     tx.addCanvas('yard_lights', canvas(drawYardLights));
     tx.addCanvas('yard_tree', canvas(drawYardTree));
     tx.addCanvas('yard_goal', canvas(drawYardGoal));
@@ -260,7 +271,7 @@ function ensureYardTextures(scene) {
 
 var Yard = new Phaser.Class({
   Extends: Phaser.Scene, initialize: function () { Phaser.Scene.call(this, 'Yard'); },
-  init: function (d) { this.fromRoom = !!(d && d.fromRoom); this.spawn = d && d.spawn; },
+  init: function (d) { this.fromRoom = !!(d && d.fromRoom); this.spawn = d && d.spawn; this.at = d && d.at; },
   create: function () {
     WALK = WALK_YARD; STAGE = STAGE_YARD;
     fitCamera(this);
@@ -268,14 +279,15 @@ var Yard = new Phaser.Class({
     ensureYardTextures(this);
     // de día, al atardecer o de noche según la hora de Madrid (dayPhase, en clock.js)
     var ph = this.phase = dayPhase(), night = ph === 'night';
-    this.add.image(0, 0, night ? 'yard_base_n' : 'yard_base').setOrigin(0).setScale(S);
+    this.add.image(0, 0, { day: 'yard_base', dusk: 'yard_base_d', night: 'yard_base_n' }[ph]).setOrigin(0).setScale(S);
     // el sol brilla un poco (de día) y las nubes cruzan despacio
     if (!night) {
-      var sunGlow = this.add.circle(286 * S, 16 * S, 16 * S, ph === 'dusk' ? 0xff9a50 : 0xfff2b0, 0.25).setBlendMode(Phaser.BlendModes.ADD).setDepth(1);
+      var sunGlow = this.add.circle(286 * S, SUN[ph].y * S, 16 * S, ph === 'dusk' ? 0xff9a50 : 0xfff2b0, 0.25).setBlendMode(Phaser.BlendModes.ADD).setDepth(1);
       this.tweens.add({ targets: sunGlow, alpha: 0.08, scale: 1.15, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     }
     this.clouds = [[20, 4, 0.9], [120, 12, 0.6], [200, 2, 0.75], [270, 20, 0.5]].map(function (c) {
       var im = self.add.image(c[0] * S, c[1] * S, 'cloud').setOrigin(0).setScale(S).setDepth(1).setAlpha(night ? 0.25 : 1);
+      if (ph === 'dusk') im.setTint(0xffc8b0);   // nubes con la luz del atardecer
       im.sp = c[2]; return im;
     });
     // noche: todo más oscuro y, por encima, estrellas, luna, ventanas encendidas y farolas
@@ -311,7 +323,7 @@ var Yard = new Phaser.Class({
     this.add.image(118.5 * S, 128 * S, 'ball').setOrigin(0.5, 1).setScale(S).setDepth(10 + 128);
 
     // Diego sale por la puerta lateral de la casa, mirando al jardín (o aparece junto a la portería al volver del minijuego)
-    var start = this.spawn === 'goal' ? [118, 140] : [288, 132];
+    var start = this.at || (this.spawn === 'goal' ? [118, 140] : [288, 132]);
     this.player = new Player(this, start[0], start[1]);
     if (this.spawn === 'goal') this.player.dir = 'up'; else { this.player.dir = 'side'; this.player.flip = true; }
     this.player.place();
@@ -342,6 +354,10 @@ var Yard = new Phaser.Class({
     this.dlg = new Dialog(this);
     this.cameras.main.fadeIn(250, 15, 10, 30);
     Logros.unlock('patio');
+    // cada minuto, ¿ha cambiado la hora del día (día, atardecer, noche)? Entonces se vuelve a pintar el patio, con Diego donde estaba
+    this.time.addEvent({ delay: 60000, loop: true, callback: function () {
+      if (dayPhase() !== self.phase && !self.busy()) self.scene.restart({ fromRoom: self.fromRoom, at: [self.player.x, self.player.y] });
+    } });
   },
   busy: function () { return this.dlg.open || this.riding; },
 

@@ -17,12 +17,11 @@ var KEEPER_ROWS = ['......hhhh......', '.....hhhhhh.....', '.....hhhhhh.....', '
   '....JJJJJJJJ....', '....nnnnnnnn....', '....nnnnnnnn....', '....nnn..nnn....', '....sss..sss....', '....www..www....', '....www..www....',
   '....www..www....', '....www..www....', '....ooo..ooo....', '...oooo..oooo...'];
 
-/* night: sin sol (de noche se ponen luna, estrellas y la luz de los focos encima) */
-function drawPenaltyField(ctx, night) {
+/* phase: 'day', 'dusk' o 'night' (de noche, sin sol: luna, estrellas y la luz de los focos van encima) */
+function drawPenaltyField(ctx, phase) {
   var p = yardPaint(ctx), R = p.R, disc = p.disc, W = 320, g = PEN.goal, x, y, k;
-  // cielo, montañas y un seto detrás de la portería
-  R(0, 0, W, 14, '#6fbcf0'); R(0, 14, W, 14, '#8fcdf5'); R(0, 28, W, 14, '#b3defa');
-  if (!night) { disc(40, 14, 8, '#fff2b0'); disc(40, 14, 5, '#ffe36e'); }
+  // cielo (como el del patio), montañas y un seto detrás de la portería
+  paintSky(p, phase, 40, 42, 19);   // al atardecer, el sol justo encima de la sierra (aquí es más alta)
   p.ridge([[0, 30], [50, 20], [96, 32], [140, 18], [190, 30], [236, 16], [280, 28], [320, 22]], 44, '#a7bdd6', 24, '#94accb');
   R(0, 40, W, 16, '#4f9a5a');
   for (x = 0; x < W; x += 6) disc(x + 3, 41, 4, x % 12 ? '#4f9a5a' : '#3a7845');
@@ -60,8 +59,8 @@ var Penalty = new Phaser.Class({
     fitCamera(this);
     var self = this, S = 3, W = CFG.W;
     ensureYardTextures(this);
-    var ph = dayPhase(), night = ph === 'night', key = night ? 'pen_field_n' : 'pen_field';
-    if (!this.textures.exists(key)) { var c = roomCanvas(320, 180); drawPenaltyField(c.getContext('2d'), night); this.textures.addCanvas(key, c); }
+    var ph = dayPhase(), night = ph === 'night', key = 'pen_field_' + ph;
+    if (!this.textures.exists(key)) { var c = roomCanvas(320, 180); drawPenaltyField(c.getContext('2d'), ph); this.textures.addCanvas(key, c); }
     makeTexture(this, 'keeper', KEEPER_ROWS, { h: '#3a2a20', s: '#f2c18e', k: '#2b1d2e', j: '#f2a93b', J: '#c9822a', g: '#f2e14e', n: '#2b2f4a', w: '#f2a93b', o: '#2b1d2e' });
     DIEGO_FRAMES.up.forEach(function (rows, i) { makeTexture(self, 'diego_up' + i, rows); });
     this.add.image(0, 0, key).setOrigin(0).setScale(S);
