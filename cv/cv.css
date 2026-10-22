@@ -1,0 +1,97 @@
+/* Expediente: hoja de papel en pixel art con los colores del juego */
+:root {
+  --night: #0f0a1e; --ink: #1d1233; --paper: #f3eedc; --paper2: #e8e1c9;
+  --frame: #9c8ad6; --frame-dark: #4b3677; --blue: #7aa7ee; --blue-light: #a9c6f5;
+  --green: #3f9a68; --green-dark: #1a5a40; --violet: #4b3a82; --dim: #6f6a85;
+  --pixel: "Pixelify Sans", "Courier New", monospace;
+  --ui: "Jersey 20", "Courier New", monospace;
+  --text: "Hanken Grotesk", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: var(--night); }
+body {
+  margin: 0; min-height: 100vh; color: var(--ink); font: 500 17px/1.55 var(--text);
+  padding: 40px 16px 56px;
+  /* fondo de la noche con líneas de pantalla, como en el juego */
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .18) 0 2px, transparent 2px 4px), var(--night);
+}
+.sheet {
+  position: relative; max-width: 880px; margin: 0 auto; background: var(--paper); padding: 44px 52px 28px;
+  border: 6px solid var(--frame); outline: 4px solid var(--ink);
+  box-shadow: 10px 10px 0 #000, inset 0 0 0 3px var(--paper2);
+}
+
+/* dentro del visor del juego, su barra ya tiene «Volver al juego» */
+.embedded .btn.go { display: none; }
+/* ---- cabecera */
+.head { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: start; }
+.avatar {
+  width: 128px; height: 176px; image-rendering: pixelated; background: var(--blue);
+  border: 4px solid var(--ink); box-shadow: 5px 5px 0 var(--frame-dark);
+  padding: 8px 8px 0; object-fit: contain; object-position: bottom;
+}
+h1 { font: 700 38px/1.1 var(--pixel); margin: 0 0 10px; letter-spacing: .5px; }
+.role { font: 400 22px/1.25 var(--ui); color: var(--violet); margin: 0 0 6px; }
+.contact { font: 400 19px/1.3 var(--ui); margin: 0 0 18px; color: var(--ink); }
+.contact a { color: var(--ink); }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* botones pixel: borde oscuro, luz arriba, sombra abajo (como los del diálogo) */
+.btn {
+  font: 400 18px/1 var(--ui); letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink); text-decoration: none;
+  background: #b9b0d6; border: 3px solid var(--ink); padding: 8px 13px 7px; cursor: pointer;
+  box-shadow: inset 3px 3px 0 rgba(255, 255, 255, .45), inset -3px -3px 0 #8d7bb5, 4px 4px 0 var(--ink);
+}
+.btn.primary { background: #86b0ea; box-shadow: inset 3px 3px 0 rgba(255, 255, 255, .45), inset -3px -3px 0 #5b84c9, 4px 4px 0 var(--ink); }
+.btn.go { background: #7cc59a; box-shadow: inset 3px 3px 0 rgba(255, 255, 255, .45), inset -3px -3px 0 var(--green), 4px 4px 0 var(--ink); }
+.btn:hover, .btn:focus-visible { transform: translate(-1px, -2px); outline: 3px solid #f0b429; outline-offset: 2px; }
+.btn:active { transform: translate(2px, 2px); box-shadow: inset 3px 3px 0 rgba(0, 0, 0, .2); }
+
+/* selector de idioma en la esquina de la hoja, para que el nombre tenga todo el ancho */
+.lang { position: absolute; top: 18px; right: 20px; display: flex; border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+.lang button { font: 400 18px/1 var(--ui); border: 0; padding: 7px 10px 6px; background: var(--paper2); color: var(--dim); cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+/* ---- secciones: la etiqueta es una pestaña como la del nombre en los diálogos */
+.rule { height: 4px; background: var(--ink); margin: 34px 0 30px; box-shadow: 0 3px 0 var(--frame); }
+section { margin-bottom: 30px; }
+h2 {
+  display: inline-block; font: 400 24px/1 var(--ui); letter-spacing: 2px; text-transform: uppercase;
+  margin: 0 0 16px; padding: 7px 16px 6px; color: var(--ink); background: var(--blue);
+  border: 3px solid var(--ink); box-shadow: inset 0 3px 0 var(--blue-light), 4px 4px 0 var(--frame-dark);
+}
+section > p { margin: 0 0 10px; }
+section > p.intro { margin-bottom: 16px; }
+.entry { border-left: 5px solid var(--green); padding: 2px 0 2px 18px; margin: 0 0 20px; }
+.entry .date { font: 400 17px/1.2 var(--ui); color: var(--green-dark); letter-spacing: .5px; }
+.entry h3 { font: 700 19px/1.3 var(--text); margin: 2px 0 4px; }
+.entry h3 .org { color: var(--violet); font-weight: 500; }
+.entry ul { margin: 6px 0 0; padding-left: 20px; }
+.entry li { margin: 3px 0; }
+.entry li::marker { color: var(--green); }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tag {
+  font: 400 17px/1 var(--ui); padding: 6px 10px 5px; background: var(--paper2);
+  border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--frame);
+}
+.group h3 { font: 700 18px/1.3 var(--text); margin: 14px 0 0; }
+
+.foot { border-top: 4px solid var(--ink); margin-top: 34px; padding-top: 14px; text-align: center; font: 400 17px/1.3 var(--ui); color: var(--violet); }
+
+/* ---- móvil */
+@media (max-width: 680px) {
+  body { padding: 16px 16px 40px; }
+  .sheet { padding: 24px 20px 20px; border-width: 4px; box-shadow: 6px 6px 0 #000; }
+  .head { grid-template-columns: 1fr; gap: 16px; }
+  .avatar { width: 96px; height: 132px; }
+  h1 { font-size: 34px; }
+}
+
+/* ---- imprimir / guardar como PDF: solo el papel, sin botones ni fondo */
+@media print {
+  html, body { background: #fff; padding: 0; }
+  .sheet { border: 0; outline: 0; box-shadow: none; max-width: none; padding: 0; background: #fff; }
+  .actions, .lang { display: none; }
+  .avatar { box-shadow: none; }
+  section, .entry { break-inside: avoid; }
+}

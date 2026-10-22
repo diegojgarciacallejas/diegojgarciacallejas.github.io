@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="../../js/guard.js"></script>
+<script src="../../js/i18n.js?v=2"></script>
+<script src="../../js/lang-en.js?v=3"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rutas (A*) · Laboratorio IA · Diego.exe</title>
+<meta name="description" content="A*, Dijkstra y la búsqueda voraz buscando el camino más corto, paso a paso.">
+<meta name="theme-color" content="#0f0a1e">
+<link rel="icon" type="image/png" sizes="32x32" href="../../img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Diego.exe">
+<meta property="og:title" content="Rutas (A*) · Laboratorio IA">
+<meta property="og:description" content="A*, Dijkstra y la búsqueda voraz buscando el camino más corto, paso a paso.">
+<meta property="og:url" content="https://diegojgarciacallejas.github.io/lab/rutas/">
+<meta property="og:image" content="https://diegojgarciacallejas.github.io/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="El cuarto pixelado de Diego.exe y el nombre de Diego José García Callejas">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../fonts/fonts.css?v=1">
+<link rel="stylesheet" href="../lab.css?v=2">
+<!-- dentro del visor del juego, el botón «Volver al juego» lo pone el visor -->
+<style>
+  .play { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .play { grid-template-columns: minmax(0, 1fr); } }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .bar .count { margin-left: auto; font: 400 20px/1 var(--ui); letter-spacing: 1px; }
+  .bar .count b { color: var(--amber); font-weight: 400; }
+  .mapbox { width: 100%; overflow-x: auto; }
+  #map { width: 100%; min-width: 520px; display: block; border: 3px solid var(--edge); background: #2f2450; touch-action: none; cursor: crosshair; }
+  #probe { font-size: 14px; min-height: 1.6em; margin: 8px 0 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 400 16px/1 var(--ui); color: var(--dim); margin: 8px 0 0; }
+  .legend i { display: inline-block; width: 14px; height: 14px; border: 2px solid #120b1c; vertical-align: -2px; margin-right: 5px; }
+  table { width: 100%; border-collapse: collapse; font: 400 18px/1.2 var(--ui); margin-top: 6px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 2px solid var(--panel2); }
+  th { color: var(--dim); font-weight: 400; letter-spacing: .5px; }
+  tr.sel td { color: var(--amber); }
+  .meter { display: inline-block; width: 90px; height: 10px; background: var(--panel2); border: 2px solid var(--edge); vertical-align: middle; margin-right: 6px; }
+  .meter i { display: block; height: 100%; background: var(--edge2); }
+  .hint { border-left: 4px solid var(--amber); background: var(--panel2); padding: 8px 10px; font-size: 14px; margin-top: 12px; }
+  .chip input { accent-color: var(--green2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="crumbs"><a href="../">Laboratorio IA</a> · Rutas</div>
+      <h1>Rutas<span class="exe">.exe</span></h1>
+      <p class="lead" data-en='How does a phone map find the shortest route? Draw walls and mud, move the start <b style="color:var(--green2)">A</b> and the goal <b style="color:var(--orange)">B</b>, and watch step by step how A*, Dijkstra and greedy search look for the path.'>¿Cómo encuentra un mapa del móvil el camino más corto? Dibuja muros y barro, mueve la salida <b style="color:var(--green2)">A</b> y la meta <b style="color:var(--orange)">B</b>,
+        y mira paso a paso cómo buscan el camino A*, Dijkstra y la búsqueda voraz.</p>
+    </div>
+    <nav><a class="btn go" id="back" href="../../#menu">← Volver al juego</a></nav>
+  </header>
+
+  <section class="play" aria-label="Mapa y búsqueda">
+    <aside class="panel">
+      <div class="field"><span class="lab">Algoritmo</span>
+        <div class="seg" data-group="algo"><button type="button" data-v="astar">A*</button><button type="button" data-v="dijkstra">Dijkstra</button><button type="button" data-v="greedy">Voraz</button></div>
+        <p class="dim" id="algoinfo" style="font-size:14px;margin-top:8px"></p>
+      </div>
+      <div class="field"><span class="lab">Pincel</span>
+        <div class="seg" data-group="tool"><button type="button" data-v="1">Muro</button><button type="button" data-v="2">Barro</button><button type="button" data-v="0">Borrar</button></div>
+        <p class="dim" style="font-size:14px;margin-top:8px" data-en='Drag A or B to move them. You can cross mud, but it costs <span id="mud"></span> times more.'>Arrastra A o B para moverlos. El barro se puede cruzar, pero cuesta <span id="mud"></span> veces más.</p>
+      </div>
+      <div class="field"><label class="chip"><input type="checkbox" id="diag"> Moverse en diagonal</label></div>
+      <div class="field"><span class="lab">Mapa</span>
+        <div class="seg" data-group="map"><button type="button" data-v="ejemplo">Ejemplo</button><button type="button" data-v="laberinto">Laberinto</button><button type="button" data-v="azar">Al azar</button><button type="button" data-v="vacio">Vacío</button></div>
+      </div>
+    </aside>
+    <div class="panel">
+      <div class="bar">
+        <button type="button" class="btn primary" id="run">▶ Buscar</button>
+        <button type="button" class="btn" id="step">Un paso</button>
+        <button type="button" class="btn" id="instant">Al instante</button>
+        <div class="seg" data-group="speed" aria-label="Velocidad"><button type="button" data-v="1">Lento</button><button type="button" data-v="4">Normal</button><button type="button" data-v="15">Rápido</button></div>
+        <div class="count">Exploradas <b id="explored">0</b></div>
+      </div>
+      <div class="mapbox"><canvas id="map" aria-label="Mapa: cuadrícula con muros, barro, salida y meta"></canvas></div>
+      <p id="probe" class="dim">Pasa el ratón por una casilla explorada para ver sus números.</p>
+      <div class="legend"><span><i style="background:#6aa6f0"></i>explorada</span><span><i style="background:transparent;border-color:#f2c66d"></i>frontera (candidatas)</span><span><i style="background:#7cc59a"></i>camino</span><span><i style="background:#0b0716"></i>muro</span><span><i style="background:#8a5a32"></i>barro</span></div>
+      <table aria-label="Comparación de los tres algoritmos en este mapa">
+        <thead><tr><th>Algoritmo</th><th>Casillas exploradas</th><th>Coste del camino</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="hint" id="hint" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="ideas">
+    <h2 id="ideas">Las ideas</h2>
+    <div class="cards">
+      <div class="card"><h3>Un mapa es un grafo</h3><p data-en='Each cell is a <b>node</b> and each step to a neighbour is an <b>edge</b> with its cost: 1 on the floor, more in mud. Finding a route means finding the smallest sum.'>Cada casilla es un <b>nodo</b> y cada paso a una vecina es una <b>arista</b> con su coste: 1 en suelo, más en barro. Buscar ruta es buscar la suma más pequeña.</p></div>
+      <div class="card"><h3>g: lo recorrido</h3><p data-en='For each cell, <b>g</b> is the cost of getting there from A along the best path found so far.'>Para cada casilla, <b>g</b> es lo que cuesta llegar desde A por el mejor camino encontrado hasta ahora.</p></div>
+      <div class="card"><h3>h: la heurística</h3><p data-en='<b>h</b> estimates what is left to B in a straight line, ignoring walls. It never overestimates, which is why A* still finds the best path.'><b>h</b> estima lo que falta hasta B en línea recta, sin mirar muros. Nunca exagera, y por eso A* sigue encontrando el mejor camino.</p></div>
+      <div class="card"><h3>A* = g + h</h3><p data-en='A* first explores the cell with the lowest <b>f = g + h</b>: what it has walked plus what is left. It heads straight for the goal without losing accuracy.'>A* explora primero la casilla con menor <b>f = g + h</b>: lo que lleva más lo que le falta. Va directo hacia la meta sin dejar de ser exacto.</p></div>
+      <div class="card"><h3>Dijkstra y voraz</h3><p data-en='<b>Dijkstra</b> only looks at g: exact, but it explores in circles in every direction. <b>Greedy</b> only looks at h: super fast, but it sometimes takes detours.'><b>Dijkstra</b> solo mira g: exacto, pero explora en círculos hacia todos lados. La <b>voraz</b> solo mira h: rapidísima, pero a veces da rodeos.</p></div>
+    </div>
+  </section>
+  <footer class="foot">Diego José García Callejas · Laboratorio IA · hecho desde cero</footer>
+</div>
+<script src="../../js/logros.js?v=3"></script>
+<script src="astar.js?v=1"></script>
+<script src="app.js?v=3"></script>
+</body>
+</html>

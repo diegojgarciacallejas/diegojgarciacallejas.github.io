@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="../js/guard.js"></script>
+<script src="../js/i18n.js?v=2"></script>
+<script src="../js/lang-en.js?v=3"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DiegOS · Diego.exe</title>
+<meta name="description" content="Un escritorio retro con terminal tipo Linux, carpetas y todos mis proyectos.">
+<meta name="theme-color" content="#0f0a1e">
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Diego.exe">
+<meta property="og:title" content="DiegOS · Diego.exe">
+<meta property="og:description" content="Un escritorio retro con terminal tipo Linux, carpetas y todos mis proyectos.">
+<meta property="og:url" content="https://diegojgarciacallejas.github.io/os/">
+<meta property="og:image" content="https://diegojgarciacallejas.github.io/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="El cuarto pixelado de Diego.exe y el nombre de Diego José García Callejas">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../fonts/fonts.css?v=1">
+<link rel="stylesheet" href="os.css?v=4">
+</head>
+<body>
+<main id="desk" aria-label="Escritorio de DiegOS">
+  <div class="logo" aria-hidden="true">Diego<span>OS</span></div>
+  <nav id="icons" aria-label="Iconos del escritorio"></nav>
+</main>
+<div id="menu" hidden>
+  <div class="mhead">Diego<span>OS</span> <small>1.0</small></div>
+  <div id="mapps"></div>
+</div>
+<footer id="bar">
+  <button type="button" id="start" aria-expanded="false" aria-controls="menu">▶ Inicio</button>
+  <div id="tasks"></div>
+  <div id="clock" title="Hora de Madrid"></div>
+</footer>
+<div id="boot" hidden></div>
+<script src="../js/logros.js?v=4"></script>
+<script src="../cv/cv-data.js?v=4"></script>
+<script src="../js/weather.js?v=73"></script>
+<script src="apps.js?v=7"></script>
+<script src="terminal.js?v=6"></script>
+<script src="os.js?v=4"></script>
+</body>
+</html>

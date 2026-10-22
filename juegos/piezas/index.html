@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="../../js/guard.js"></script>
+<script src="../../js/i18n.js?v=2"></script>
+<script src="../../js/lang-en.js?v=3"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Piezas · Diego.exe</title>
+<meta name="description" content="Copia modelos en 3D pieza a pieza: un juego de construcción en el navegador.">
+<meta name="theme-color" content="#0f0a1e">
+<link rel="icon" type="image/png" sizes="32x32" href="../../img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Diego.exe">
+<meta property="og:title" content="Piezas 3D · Diego.exe">
+<meta property="og:description" content="Copia modelos en 3D pieza a pieza: un juego de construcción en el navegador.">
+<meta property="og:url" content="https://diegojgarciacallejas.github.io/juegos/piezas/">
+<meta property="og:image" content="https://diegojgarciacallejas.github.io/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="El cuarto pixelado de Diego.exe y el nombre de Diego José García Callejas">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../fonts/fonts.css?v=1">
+<link rel="stylesheet" href="../../lab/lab.css?v=2">
+<!-- dentro del visor del juego, el botón «Volver al juego» lo pone el visor -->
+<style>
+  .levels { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .levels button { font: 400 18px/1 var(--ui); background: var(--panel2); color: var(--cream); border: 2px solid var(--edge); padding: 7px 10px 6px; cursor: pointer; }
+  .levels button[aria-pressed="true"] { background: var(--cream); color: var(--ink); border-color: var(--cream); }
+  .levels button.ok::after { content: " ✓"; color: var(--green2); }
+  .levels button[aria-pressed="true"].ok::after { color: var(--green); }
+  .game { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 820px) { .game { grid-template-columns: minmax(0, 1fr); } }
+  #model { width: 100%; max-width: 232px; aspect-ratio: 1; display: block; margin: 0 auto 8px; border: 3px solid var(--edge); cursor: default; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatches button { width: 32px; height: 32px; border: 3px solid var(--ink); cursor: pointer; box-shadow: inset 2px 2px 0 rgba(255,255,255,.35), inset -2px -2px 0 rgba(0,0,0,.25); }
+  .swatches button[aria-pressed="true"] { outline: 3px solid var(--amber); outline-offset: 2px; }
+  .boardbox { width: 100%; max-width: 760px; margin: 0 auto; }
+  #board { width: 100%; aspect-ratio: 4 / 3; display: block; background: #241a3d; border: 3px solid var(--edge); cursor: grab; touch-action: none; }
+  .meter { height: 18px; background: var(--panel2); border: 2px solid var(--edge); margin: 6px 0 4px; }
+  .meter i { display: block; height: 100%; background: var(--green2); transition: width .2s; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .bar .count { margin-left: auto; font: 400 20px/1 var(--ui); }
+  .bar .count b { color: var(--amber); font-weight: 400; }
+  .win { position: relative; }
+  #done { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(15,10,30,.82); text-align: center; padding: 16px; }
+  #done[hidden] { display: none; }
+  #done h2 { font: 700 40px/1 var(--pixel); color: var(--green2); text-transform: none; letter-spacing: 0; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="crumbs">Diego.exe · Juegos</div>
+      <h1>Piezas<span class="exe">.exe</span></h1>
+      <p class="lead">Elige un modelo y móntalo en 3D, pieza a pieza. Las piezas se ponen encima o al lado de otras; arrastra para girar la figura y verla por todos lados.</p>
+    </div>
+    <nav><a class="btn go" id="back" href="../../#full">← Volver al juego</a></nav>
+  </header>
+
+  <div class="levels" id="levels" aria-label="Modelos"></div>
+
+  <section class="game">
+    <aside class="panel">
+      <h2>Modelo</h2>
+      <canvas id="model" aria-label="El modelo que hay que copiar, girando"></canvas>
+      <p class="dim" id="mname" style="text-align:center;margin:0 0 14px"></p>
+      <div class="field"><span class="lab">Color</span><div class="swatches" id="colors"></div></div>
+      <div class="field"><span class="lab">Pieza</span>
+        <div class="seg" data-group="size"><button type="button" data-v="1x1">1×1</button><button type="button" data-v="1x2">1×2</button><button type="button" data-v="1x3">1×3</button><button type="button" data-v="1x4">1×4</button><button type="button" data-v="2x2">2×2</button><button type="button" data-v="2x3">2×3</button></div>
+      </div>
+      <div class="field row" style="flex-wrap:wrap">
+        <button type="button" class="btn" id="rotate">↻ Girar (R)</button>
+        <button type="button" class="btn" id="eraser">Borrador</button>
+      </div>
+      <p class="dim" style="font-size:14px">Clic: poner pieza · clic derecho o borrador: quitarla · R: girar la pieza · arrastrar: girar la vista (Q / E a saltos) · rueda o pellizco: acercar.</p>
+    </aside>
+    <div class="panel">
+      <div class="bar">
+        <button type="button" class="btn" id="undo">Deshacer</button>
+        <button type="button" class="btn" id="clear">Vaciar</button>
+        <label class="chip"><input type="checkbox" id="ghost"> Ver la silueta</label>
+        <button type="button" class="btn" id="left" aria-label="Girar la vista a la izquierda">⟲</button><button type="button" class="btn" id="right" aria-label="Girar la vista a la derecha">⟳</button>
+        <div class="count">Piezas <b id="used">0</b></div>
+      </div>
+      <div class="boardbox win">
+        <canvas id="board" aria-label="Placa de construcción en 3D"></canvas>
+        <div id="done" hidden><div><h2>¡Réplica perfecta!</h2><p id="donetxt"></p><button type="button" class="btn go" id="next">Siguiente modelo →</button></div></div>
+      </div>
+      <div class="meter"><i id="match" style="width:0"></i></div>
+      <p class="dim" id="matchtxt" style="margin:0;font-size:14px"></p>
+    </div>
+  </section>
+  <footer class="foot">Diego José García Callejas · Diego.exe</footer>
+</div>
+<script src="../../js/logros.js?v=3"></script>
+<script type="module" src="app.js?v=8"></script>
+</body>
+</html>

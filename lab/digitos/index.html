@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="../../js/guard.js"></script>
+<script src="../../js/i18n.js?v=2"></script>
+<script src="../../js/lang-en.js?v=3"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dígitos · Laboratorio IA · Diego.exe</title>
+<meta name="description" content="Dibuja un número y una red convolucional lo reconoce mientras dibujas.">
+<meta name="theme-color" content="#0f0a1e">
+<link rel="icon" type="image/png" sizes="32x32" href="../../img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Diego.exe">
+<meta property="og:title" content="Dígitos (CNN) · Laboratorio IA">
+<meta property="og:description" content="Dibuja un número y una red convolucional lo reconoce mientras dibujas.">
+<meta property="og:url" content="https://diegojgarciacallejas.github.io/lab/digitos/">
+<meta property="og:image" content="https://diegojgarciacallejas.github.io/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="El cuarto pixelado de Diego.exe y el nombre de Diego José García Callejas">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../fonts/fonts.css?v=1">
+<link rel="stylesheet" href="../lab.css?v=2">
+<!-- dentro del visor del juego, el botón «Volver al juego» lo pone el visor -->
+<style>
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 820px) { .main { grid-template-columns: minmax(0, 1fr); } }
+  .padbox { position: relative; width: 100%; max-width: 336px; aspect-ratio: 1; margin: 0 auto 12px; border: 3px solid var(--edge); background: #0b0716; touch-action: none; }
+  .padbox canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #grid { pointer-events: none; }
+  #pad { cursor: crosshair; }
+  #padHint { position: absolute; inset: 0; display: grid; place-items: center; font: 400 22px/1.2 var(--ui); color: var(--dim); text-align: center; pointer-events: none; padding: 20px; }
+  .row.wrap { flex-wrap: wrap; justify-content: center; }
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
+  .samples button { font: 400 20px/1 var(--ui); width: 34px; height: 34px; background: var(--panel2); color: var(--cream); border: 2px solid var(--edge); cursor: pointer; }
+  .samples button:hover, .samples button:focus-visible { border-color: var(--amber); outline: 0; }
+  .verdict { display: flex; align-items: center; gap: 18px; margin-bottom: 14px; }
+  .big { font: 700 92px/1 var(--pixel); color: var(--green2); min-width: 72px; text-align: center; }
+  .verdict p { margin: 0; color: var(--dim); }
+  .verdict b { color: var(--cream); font: 400 26px/1 var(--ui); }
+  .bars { display: grid; gap: 4px; }
+  .bar { display: grid; grid-template-columns: 22px 1fr 52px; align-items: center; gap: 8px; font: 400 19px/1 var(--ui); }
+  .bar .track { height: 16px; background: var(--panel2); border: 2px solid var(--edge); }
+  .bar .fill { height: 100%; background: var(--edge2); transition: width .12s; }
+  .bar.top .fill { background: var(--green2); }
+  .bar .pct { text-align: right; color: var(--dim); }
+  .seen { display: flex; gap: 14px; align-items: center; margin-top: 16px; }
+  .seen canvas { width: 84px; height: 84px; image-rendering: pixelated; border: 2px solid var(--edge); background: #000; }
+  .seen p { font-size: 14px; color: var(--dim); margin: 0; }
+  .layer1 { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; }
+  .fmap { background: var(--panel2); border: 2px solid var(--edge); padding: 8px; text-align: center; }
+  .fmap .pair { display: flex; gap: 6px; align-items: center; justify-content: center; }
+  .fmap canvas { image-rendering: pixelated; border: 1px solid #000; }
+  .fmap .k { width: 30px; height: 30px; }
+  .fmap .m { width: 64px; height: 64px; background: #000; }
+  .fmap span { display: block; font: 400 15px/1.1 var(--ui); color: var(--dim); margin-top: 6px; }
+  .layer2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 8px; }
+  .layer2 canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; border: 2px solid var(--edge); background: #000; }
+  .train { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 820px) { .train { grid-template-columns: minmax(0, 1fr); } }
+  #curves, #conf { width: 100%; display: block; background: var(--panel2); border: 2px solid var(--edge); }
+  #curves { height: 200px; } #conf { aspect-ratio: 1; max-width: 320px; margin: 0 auto; }
+  .fails { display: flex; flex-wrap: wrap; gap: 10px; }
+  .fails figure { margin: 0; text-align: center; font: 400 15px/1.2 var(--ui); color: var(--dim); }
+  .fails canvas { width: 56px; height: 56px; image-rendering: pixelated; border: 2px solid var(--edge); display: block; margin: 0 auto 4px; }
+  .fails b { color: var(--cream); font-weight: 400; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="crumbs"><a href="../">Laboratorio IA</a> · Dígitos</div>
+      <h1>Dígitos<span class="exe">.exe</span></h1>
+      <p class="lead" data-en='Draw a number from 0 to 9 and a convolutional network will try to guess which one it is as you draw. Below you can see what each filter looks for and how it was trained. Everything runs in your browser, with no libraries.'>Dibuja un número del 0 al 9 y una red convolucional intentará adivinar cuál es mientras dibujas.
+        Debajo puedes ver qué busca cada filtro y cómo se entrenó. Todo se calcula en tu navegador, sin librerías.</p>
+    </div>
+    <nav><a class="btn go" id="back" href="../../#menu">← Volver al juego</a></nav>
+  </header>
+
+  <section class="main" aria-label="Probar la red">
+    <div class="panel">
+      <h2>Dibuja aquí</h2>
+      <div class="padbox"><canvas id="grid" width="280" height="280"></canvas><canvas id="pad" width="280" height="280" aria-label="Pizarra para dibujar un dígito"></canvas><div id="padHint" data-en='Draw a number from 0 to 9<br>with your mouse or finger'>Dibuja un número del 0 al 9<br>con el ratón o con el dedo</div></div>
+      <div class="row wrap"><button type="button" class="btn" id="clear">Borrar</button></div>
+      <p class="dim" style="text-align:center;margin:12px 0 0;font-size:14px">o carga un ejemplo de verdad (de MNIST):</p>
+      <div class="samples" id="samples"></div>
+    </div>
+    <div class="panel">
+      <h2>Lo que dice la red</h2>
+      <div class="verdict"><div class="big" id="big">?</div><p id="verdict">Todavía no hay nada dibujado.</p></div>
+      <div class="bars" id="bars"></div>
+      <div class="seen"><canvas id="seen" width="28" height="28"></canvas>
+        <p data-en='This is how your drawing reaches it: <b style="color:var(--cream)">28 × 28 pixels</b>, centred and scaled like the images it learned from. For the network it is 784 numbers between 0 and 1.'>Así le llega tu dibujo: <b style="color:var(--cream)">28 × 28 píxeles</b>, centrado y escalado como las imágenes con las que aprendió. Para la red son 784 números entre 0 y 1.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="ideas">
+    <h2 id="ideas">Cómo funciona</h2>
+    <div class="cards">
+      <div class="card"><h3>1 · Una imagen son números</h3><p>Cada píxel es un número: 0 si está vacío, 1 si está pintado del todo. La red no «ve» un dibujo, ve 784 números.</p></div>
+      <div class="card"><h3>2 · Filtros</h3><p data-en='A <b>filter</b> is a small 3 × 3 window of weights that slides over the image looking for a pattern: an edge, a corner, a curve. Where it finds it, it lights up.'>Un <b>filtro</b> es una ventanita de 3 × 3 pesos que recorre la imagen buscando un patrón: un borde, una esquina, una curva. Donde lo encuentra, se enciende.</p></div>
+      <div class="card"><h3>3 · ReLU y pooling</h3><p data-en='<b>ReLU</b> keeps only what lit up. <b>Pooling</b> halves the image, keeping the strongest value in each area.'><b>ReLU</b> se queda solo con lo que se encendió. El <b>pooling</b> reduce la imagen a la mitad quedándose con lo más fuerte de cada zona.</p></div>
+      <div class="card"><h3>4 · Más filtros encima</h3><p>La segunda capa combina lo que encontró la primera: ya no busca bordes sueltos, sino trozos de números, como un círculo o un palo.</p></div>
+      <div class="card"><h3>5 · La decisión</h3><p data-en='At the end there are 10 scores, one per digit. <b>Softmax</b> turns them into probabilities that add up to 100 % and the highest one wins.'>Al final hay 10 puntuaciones, una por dígito. <b>Softmax</b> las convierte en probabilidades que suman 100 % y gana la más alta.</p></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="dentro">
+    <h2 id="dentro">Por dentro</h2>
+    <h3>Capa 1: 8 filtros</h3>
+    <p class="dim" style="font-size:14px">Para cada filtro: a la izquierda sus 9 pesos (azul suma, naranja resta) y a la derecha dónde se enciende en tu dibujo.</p>
+    <div class="layer1" id="layer1"></div>
+    <h3 style="margin-top:18px">Capa 2: 16 filtros</h3>
+    <p class="dim" style="font-size:14px">Cada uno combina los 8 de antes. La imagen ya es más pequeña (14 × 14) y lo que buscan es más abstracto.</p>
+    <div class="layer2" id="layer2"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="entreno">
+    <h2 id="entreno">Cómo aprendió</h2>
+    <p id="repcap" class="dim"></p>
+    <div class="train">
+      <div>
+        <h3>Pérdida en cada época</h3>
+        <canvas id="curves" aria-label="Curva de pérdida de entrenamiento y de prueba"></canvas>
+        <div class="legend" style="display:flex;gap:14px;font:400 15px/1 var(--ui);color:var(--dim);margin:6px 0 16px"><span><i style="display:inline-block;width:14px;height:4px;background:var(--green2);vertical-align:middle"></i> entrenamiento</span><span><i style="display:inline-block;width:14px;height:4px;background:#e88aa0;vertical-align:middle"></i> prueba</span></div>
+        <h3>Dónde se equivoca</h3>
+        <div class="fails" id="fails"></div>
+      </div>
+      <div>
+        <h3>Matriz de confusión</h3>
+        <p class="dim" style="font-size:14px">Filas: el número de verdad. Columnas: lo que dijo la red. La diagonal son los aciertos.</p>
+        <canvas id="conf" aria-label="Matriz de confusión"></canvas>
+      </div>
+    </div>
+  </section>
+  <footer class="foot">Diego José García Callejas · Laboratorio IA · red entrenada con PyTorch, ejecutada aquí desde cero</footer>
+</div>
+<script src="../../js/logros.js?v=3"></script>
+<script src="model.js?v=1"></script>
+<script src="cnn.js?v=1"></script>
+<script src="app.js?v=2"></script>
+</body>
+</html>

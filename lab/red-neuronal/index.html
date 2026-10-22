@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="../../js/guard.js"></script>
+<script src="../../js/i18n.js?v=2"></script>
+<script src="../../js/lang-en.js?v=3"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Red neuronal · Laboratorio IA · Diego.exe</title>
+<meta name="description" content="Una red neuronal que aprende a separar dos clases de puntos: cambia capas, neuronas y activaciones.">
+<meta name="theme-color" content="#0f0a1e">
+<link rel="icon" type="image/png" sizes="32x32" href="../../img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Diego.exe">
+<meta property="og:title" content="Red neuronal · Laboratorio IA">
+<meta property="og:description" content="Una red neuronal que aprende a separar dos clases de puntos: cambia capas, neuronas y activaciones.">
+<meta property="og:url" content="https://diegojgarciacallejas.github.io/lab/red-neuronal/">
+<meta property="og:image" content="https://diegojgarciacallejas.github.io/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="El cuarto pixelado de Diego.exe y el nombre de Diego José García Callejas">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../fonts/fonts.css?v=1">
+<link rel="stylesheet" href="../lab.css?v=2">
+<style>
+  /* banco de pruebas: controles | red | salida */
+  .play { display: grid; grid-template-columns: 270px minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+  @media (max-width: 1120px) { .play { grid-template-columns: 270px minmax(0, 1fr); } .netbox { grid-column: 1 / -1; order: 3; } }
+  @media (max-width: 680px) { .play { grid-template-columns: minmax(0, 1fr); } }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .bar .epoch { margin-left: auto; font: 400 20px/1 var(--ui); letter-spacing: 1px; }
+  .bar .epoch b { color: var(--amber); font-weight: 400; }
+  #net { width: 100%; height: 380px; display: block; cursor: default; }
+  #netcap { min-height: 3.2em; margin: 8px 0 0; font-size: 15px; }
+  .canvasbox { position: relative; width: 100%; max-width: 300px; aspect-ratio: 1; margin: 0 auto 8px; border: 3px solid var(--edge); background: var(--panel2); }
+  #out { width: 100%; height: 100%; display: block; cursor: crosshair; }
+  #probe { font-size: 14px; min-height: 2.6em; text-align: center; margin-bottom: 10px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; text-align: center; }
+  .stats div { background: var(--panel2); border: 2px solid var(--edge); padding: 6px 4px; }
+  .stats b { display: block; font: 400 24px/1 var(--ui); color: var(--cream); }
+  .stats span { font: 400 14px/1.1 var(--ui); color: var(--dim); letter-spacing: .5px; }
+  #loss { width: 100%; height: 110px; display: block; background: var(--panel2); border: 2px solid var(--edge); }
+  .legend { display: flex; gap: 14px; font: 400 15px/1 var(--ui); color: var(--dim); margin: 6px 0 12px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 4px; }
+  .hint { border-left: 4px solid var(--amber); background: var(--panel2); padding: 8px 10px; font-size: 14px; min-height: 3em; }
+  .layers { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .layer { display: flex; align-items: center; gap: 8px; font: 400 18px/1 var(--ui); background: var(--panel2); border: 2px solid var(--edge); padding: 4px 6px; }
+  .layer span { flex: 1; }
+  .mini { font: 400 18px/1 var(--ui); width: 28px; height: 26px; border: 2px solid var(--ink); background: #b9b0d6; color: var(--ink); cursor: pointer; padding: 0; }
+  .mini:disabled { opacity: .4; cursor: default; }
+  #actplot { width: 100%; height: 70px; display: block; background: var(--panel2); border: 2px solid var(--edge); margin: 8px 0 6px; }
+  #actinfo { font-size: 14px; color: #ddd7ea; min-height: 4.4em; }
+  .dot { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--ink); vertical-align: -1px; }
+  .dot.b { background: var(--blue); } .dot.o { background: var(--orange); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .challenge .btn { margin-top: 6px; }
+</style>
+<!-- dentro del visor del juego, el botón «Volver al juego» lo pone el visor -->
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="crumbs"><a href="../">Laboratorio IA</a> · Red neuronal</div>
+      <h1>Red neuronal<span class="exe">.exe</span></h1>
+      <p class="lead" data-en='A neural network learns to separate <span class="dot b"></span> blue points from <span class="dot o"></span> orange points. Change its layers, its activation function or the data, and watch live how what it learns changes. Everything is computed right here, in your browser, with no libraries.'>Una red neuronal aprende a separar puntos <span class="dot b"></span> azules de puntos <span class="dot o"></span> naranjas.
+        Cambia sus capas, su función de activación o los datos, y mira en directo cómo cambia lo que aprende.
+        Todo se calcula aquí mismo, en tu navegador, sin librerías.</p>
+    </div>
+    <nav><a class="btn go" id="back" href="../../#menu">← Volver al juego</a></nav>
+  </header>
+
+  <section aria-labelledby="ideas">
+    <h2 id="ideas">Cinco ideas para empezar</h2>
+    <div class="cards">
+      <div class="card"><h3>Neurona</h3><p data-en='It adds up its inputs, each multiplied by a <b>weight</b>, adds a <b>bias</b> and passes the result through a function. The weights are what the network learns.'>Suma sus entradas, cada una multiplicada por un <b>peso</b>, le añade un <b>sesgo</b> y pasa el resultado por una función. Los pesos son lo que la red aprende.</p></div>
+      <div class="card"><h3>Capas</h3><p>Las neuronas se agrupan en capas: cada capa recibe lo que calcula la anterior. Más capas permiten combinar formas sencillas en fronteras más complicadas.</p></div>
+      <div class="card"><h3>Activación</h3><p data-en='It is the function each neuron applies. If it is <b>linear</b>, the whole network can only draw straight lines, however many layers it has: the curve (ReLU, tanh…) is what gives it power.'>Es la función que aplica cada neurona. Si es <b>lineal</b>, la red entera solo sabe trazar rectas, tenga las capas que tenga: la curva (ReLU, tanh…) es lo que le da poder.</p></div>
+      <div class="card"><h3>Pérdida y entrenamiento</h3><p data-en='The <b>loss</b> measures how wrong it is. Training means nudging each weight a little in the direction that reduces it; the <b>learning rate</b> says how much.'>La <b>pérdida</b> mide cuánto se equivoca. Entrenar es mover cada peso un poquito en la dirección que la reduce; la <b>tasa de aprendizaje</b> dice cuánto.</p></div>
+      <div class="card"><h3>Sobreajuste</h3><p data-en='If the network memorises the training points, it gets them right but fails on the <b>test</b> points it has never seen. That is why we watch both losses.'>Si la red memoriza los puntos de entrenamiento, acierta con ellos pero falla con los <b>de prueba</b>, que no ha visto. Por eso se miran las dos pérdidas.</p></div>
+    </div>
+  </section>
+
+  <section class="play" aria-label="Banco de pruebas">
+    <aside class="panel ctrl">
+      <div class="field"><span class="lab">Datos</span>
+        <div class="seg" data-group="ds">
+          <button type="button" data-v="circulos">Círculos</button><button type="button" data-v="xor">XOR</button>
+          <button type="button" data-v="gauss">Nubes</button><button type="button" data-v="lunas">Lunas</button>
+          <button type="button" data-v="espiral">Espiral</button>
+        </div>
+      </div>
+      <div class="field"><label class="lab" for="noise">Ruido: <span id="noise-v"></span></label>
+        <input type="range" id="noise" min="0" max="0.6" step="0.05" style="width:100%">
+      </div>
+      <div class="field"><span class="lab">Entradas</span><div class="chips" id="feats"></div></div>
+      <div class="field"><span class="lab">Capas ocultas</span>
+        <div class="layers" id="layers"></div>
+        <div class="row"><button type="button" class="btn" id="add-layer">+ Capa</button><button type="button" class="btn" id="del-layer">− Capa</button></div>
+      </div>
+      <div class="field"><span class="lab">Activación</span>
+        <div class="seg" data-group="act">
+          <button type="button" data-v="relu">ReLU</button><button type="button" data-v="tanh">tanh</button>
+          <button type="button" data-v="sigmoid">Sigmoide</button><button type="button" data-v="linear">Lineal</button>
+        </div>
+        <canvas id="actplot" aria-hidden="true"></canvas>
+        <p id="actinfo"></p>
+      </div>
+      <div class="field"><label class="lab" for="lr">Tasa de aprendizaje</label>
+        <select id="lr"><option>0.001</option><option>0.003</option><option>0.01</option><option>0.03</option><option>0.1</option><option>0.3</option><option>1</option></select>
+      </div>
+      <div class="field"><label class="lab" for="l2">Regularización L2</label>
+        <select id="l2"><option value="0">ninguna</option><option>0.0001</option><option>0.001</option><option>0.01</option></select>
+      </div>
+    </aside>
+
+    <div class="panel netbox">
+      <div class="bar">
+        <button type="button" class="btn primary" id="play">▶ Entrenar</button>
+        <button type="button" class="btn" id="step">Un paso</button>
+        <button type="button" class="btn" id="reset">↺ Reiniciar pesos</button>
+        <div class="seg" data-group="speed" aria-label="Velocidad">
+          <button type="button" data-v="1">Lento</button><button type="button" data-v="4">Normal</button><button type="button" data-v="12">Rápido</button>
+        </div>
+        <div class="epoch">Época <b id="epoch">0</b></div>
+      </div>
+      <canvas id="net" aria-label="Dibujo de la red: entradas, capas ocultas y salida"></canvas>
+      <p id="netcap" class="dim" data-en='Each square is a neuron, showing which area of the plane it responds to (blue: high value, orange: low). The lines are the weights: blue if they add, orange if they subtract; thicker means stronger. Hover over a neuron.'>Cada cuadrado es una neurona y dentro se ve a qué zona del plano responde (azul: valor alto, naranja: bajo).
+        Las líneas son los pesos: azul si suman, naranja si restan; más gruesa, más fuerza. Pasa el ratón por una neurona.</p>
+    </div>
+
+    <aside class="panel out">
+      <h2>Salida</h2>
+      <div class="canvasbox"><canvas id="out" aria-label="Lo que predice la red en cada punto del plano"></canvas></div>
+      <p id="probe" class="dim">Pasa el ratón por el plano para ver qué dice la red en cada punto.</p>
+      <div class="field"><span class="lab">Añadir puntos con clic</span>
+        <div class="row" style="flex-wrap:wrap">
+          <div class="seg" data-group="brush"><button type="button" data-v="">No</button><button type="button" data-v="1">Azul</button><button type="button" data-v="0">Naranja</button></div>
+          <button type="button" class="btn" id="clear-mine" style="font-size:15px;padding:5px 8px 4px">Borrar los míos</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div><b id="ltr">–</b><span>pérdida entren.</span></div>
+        <div><b id="lte">–</b><span>pérdida prueba</span></div>
+        <div><b id="acc">–</b><span>acierto prueba</span></div>
+      </div>
+      <canvas id="loss" aria-label="Evolución de la pérdida"></canvas>
+      <div class="legend"><span><i style="background:var(--green2)"></i>entrenamiento</span><span><i style="background:#e88aa0"></i>prueba</span><span>● relleno: entrenamiento · ○ hueco: prueba · línea: frontera</span></div>
+      <div class="hint" id="hint" aria-live="polite"></div>
+    </aside>
+  </section>
+
+  <section aria-labelledby="retos">
+    <h2 id="retos">Retos</h2>
+    <p class="dim">Cada reto carga una red y unos datos. Dale a entrenar, observa y prueba a arreglarlo.</p>
+    <div class="cards" id="challenges"></div>
+  </section>
+
+  <footer class="foot">Diego José García Callejas · Laboratorio IA · hecho desde cero, píxel a píxel</footer>
+</div>
+<script src="../../js/logros.js?v=3"></script>
+<script src="nn.js?v=1"></script>
+<script src="app.js?v=7"></script>
+</body>
+</html>

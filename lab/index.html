@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="../js/guard.js"></script>
+<script src="../js/i18n.js?v=2"></script>
+<script src="../js/lang-en.js?v=3"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Laboratorio IA · Diego.exe</title>
+<meta name="description" content="Red neuronal, reconocimiento de dígitos con una CNN, A* y K-Means: proyectos de IA para probar en el navegador.">
+<meta name="theme-color" content="#0f0a1e">
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Diego.exe">
+<meta property="og:title" content="Laboratorio IA · Diego.exe">
+<meta property="og:description" content="Red neuronal, reconocimiento de dígitos con una CNN, A* y K-Means: proyectos de IA para probar en el navegador.">
+<meta property="og:url" content="https://diegojgarciacallejas.github.io/lab/">
+<meta property="og:image" content="https://diegojgarciacallejas.github.io/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="El cuarto pixelado de Diego.exe y el nombre de Diego José García Callejas">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../fonts/fonts.css?v=1">
+<link rel="stylesheet" href="lab.css?v=2">
+<style>
+  .projects { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .project { display: flex; flex-direction: column; gap: 8px; }
+  .project .tag { align-self: flex-start; font: 400 16px/1 var(--ui); letter-spacing: 1px; padding: 4px 8px 3px; border: 2px solid var(--edge); color: var(--dim); }
+  .project .tag.on { color: var(--ink); background: var(--green2); border-color: var(--green2); }
+  .project p { flex: 1; }
+  .project.soon { opacity: .7; }
+</style>
+<!-- dentro del visor del juego, el botón «Volver al juego» lo pone el visor -->
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="crumbs">Diego.exe · Laboratorio IA</div>
+      <h1>Laboratorio <span class="exe">IA</span></h1>
+      <p class="lead" data-en='Small projects to look inside some artificial intelligence models and play with them. Everything is coded from scratch and runs in your browser.'>Pequeños proyectos para ver por dentro cómo funcionan algunos modelos de inteligencia artificial y jugar con ellos.
+        Todo está programado desde cero y se ejecuta en tu navegador.</p>
+    </div>
+    <nav><a class="btn go" id="back" href="../#menu">← Volver al juego</a></nav>
+  </header>
+
+  <section class="projects">
+    <article class="card project">
+      <span class="tag on">Disponible</span>
+      <h3>Red neuronal</h3>
+      <p>Una red que aprende a separar dos clases de puntos. Cambia capas, neuronas, activaciones y datos, y mira qué aprende cada neurona.</p>
+      <a class="btn primary" href="red-neuronal/">Entrar</a>
+    </article>
+    <article class="card project">
+      <span class="tag on">Disponible</span>
+      <h3>Dígitos (CNN)</h3>
+      <p>Dibuja un número y una red convolucional adivinará cuál es mientras dibujas, enseñando lo que busca cada filtro.</p>
+      <a class="btn primary" href="digitos/">Entrar</a>
+    </article>
+    <article class="card project">
+      <span class="tag on">Disponible</span>
+      <h3>Rutas (A*)</h3>
+      <p>Dibuja muros y barro y mira paso a paso cómo A*, Dijkstra y la búsqueda voraz encuentran el camino más corto.</p>
+      <a class="btn primary" href="rutas/">Entrar</a>
+    </article>
+    <article class="card project">
+      <span class="tag on">Disponible</span>
+      <h3>Agrupamiento (K-Means)</h3>
+      <p>Agrupar puntos parecidos sin que nadie diga cuáles van juntos: aprendizaje no supervisado, paso a paso y con el método del codo.</p>
+      <a class="btn primary" href="kmeans/">Entrar</a>
+    </article>
+  </section>
+  <footer class="foot">Diego José García Callejas · Laboratorio IA</footer>
+</div>
+<script src="../js/logros.js?v=3"></script>
+<script src="hub.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="../../js/guard.js"></script>
+<script src="../../js/i18n.js?v=2"></script>
+<script src="../../js/lang-en.js?v=3"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Agrupamiento (K-Means) · Laboratorio IA · Diego.exe</title>
+<meta name="description" content="Agrupamiento no supervisado paso a paso, con K-Means++ y el método del codo.">
+<meta name="theme-color" content="#0f0a1e">
+<link rel="icon" type="image/png" sizes="32x32" href="../../img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Diego.exe">
+<meta property="og:title" content="K-Means · Laboratorio IA">
+<meta property="og:description" content="Agrupamiento no supervisado paso a paso, con K-Means++ y el método del codo.">
+<meta property="og:url" content="https://diegojgarciacallejas.github.io/lab/kmeans/">
+<meta property="og:image" content="https://diegojgarciacallejas.github.io/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="El cuarto pixelado de Diego.exe y el nombre de Diego José García Callejas">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../fonts/fonts.css?v=1">
+<link rel="stylesheet" href="../lab.css?v=2">
+<!-- dentro del visor del juego, el botón «Volver al juego» lo pone el visor -->
+<style>
+  .play { display: grid; grid-template-columns: 250px minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+  @media (max-width: 1100px) { .play { grid-template-columns: 250px minmax(0, 1fr); } .side { grid-column: 1 / -1; } }
+  @media (max-width: 720px) { .play { grid-template-columns: minmax(0, 1fr); } }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .bar .count { margin-left: auto; font: 400 20px/1 var(--ui); letter-spacing: 1px; }
+  .bar .count b { color: var(--amber); font-weight: 400; }
+  .planebox { width: 100%; max-width: 560px; aspect-ratio: 1; margin: 0 auto; border: 3px solid var(--edge); background: #241a3d; }
+  #plane { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+  #phase { text-align: center; font: 400 20px/1.2 var(--ui); letter-spacing: .5px; margin: 10px 0 4px; min-height: 1.2em; }
+  #phase b { color: var(--amber); font-weight: 400; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 12px; text-align: center; }
+  .stats div { background: var(--panel2); border: 2px solid var(--edge); padding: 6px 4px; }
+  .stats b { display: block; font: 400 24px/1 var(--ui); }
+  .stats span { font: 400 14px/1.1 var(--ui); color: var(--dim); }
+  #elbow { width: 100%; height: 170px; display: block; background: var(--panel2); border: 2px solid var(--edge); cursor: pointer; }
+  .hint { border-left: 4px solid var(--amber); background: var(--panel2); padding: 8px 10px; font-size: 14px; margin-top: 12px; }
+  .groups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .groups span { font: 400 16px/1 var(--ui); padding: 4px 6px 3px; border: 2px solid #120b1c; color: #120b1c; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="crumbs"><a href="../">Laboratorio IA</a> · Agrupamiento</div>
+      <h1>K-Means<span class="exe">.exe</span></h1>
+      <p class="lead" data-en='Like sorting the balls in a gumball machine by colour, but without anyone telling you how many colours there are or which ones go together. That is <b>unsupervised learning</b>: K-Means finds K groups of similar points on its own.'>Como agrupar las bolas de una máquina de chicles por colores, pero sin que nadie te diga cuántos colores hay ni cuáles van juntas.
+        Eso es <b>aprendizaje no supervisado</b>: K-Means busca él solo K grupos de puntos parecidos.</p>
+    </div>
+    <nav><a class="btn go" id="back" href="../../#menu">← Volver al juego</a></nav>
+  </header>
+
+  <section class="play" aria-label="Agrupar puntos">
+    <aside class="panel">
+      <div class="field"><span class="lab">Datos</span>
+        <div class="seg" data-group="ds"><button type="button" data-v="nubes">Nubes</button><button type="button" data-v="distintas">Tamaños</button><button type="button" data-v="alargadas">Alargadas</button><button type="button" data-v="anillos">Anillos</button><button type="button" data-v="azar">Al azar</button></div>
+        <p class="dim" style="font-size:14px;margin-top:8px">Haz clic en el plano para añadir puntos.</p>
+      </div>
+      <div class="field"><span class="lab">Número de grupos (K)</span>
+        <div class="seg" data-group="k"><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button><button type="button" data-v="6">6</button><button type="button" data-v="8">8</button></div>
+      </div>
+      <div class="field"><span class="lab">Centros iniciales</span>
+        <div class="seg" data-group="init"><button type="button" data-v="azar">Al azar</button><button type="button" data-v="pp">K-Means++</button></div>
+        <p class="dim" id="initinfo" style="font-size:14px;margin-top:8px"></p>
+      </div>
+    </aside>
+    <div class="panel">
+      <div class="bar">
+        <button type="button" class="btn primary" id="run">▶ Agrupar</button>
+        <button type="button" class="btn" id="step">Un paso</button>
+        <button type="button" class="btn" id="reset">↺ Nuevos centros</button>
+        <div class="count">Ronda <b id="iter">0</b></div>
+      </div>
+      <div class="planebox"><canvas id="plane" aria-label="Puntos coloreados por grupo, con los centros como bolas grandes"></canvas></div>
+      <p id="phase"></p>
+    </div>
+    <aside class="panel side">
+      <h2>Resultado</h2>
+      <div class="stats"><div><b id="inertia">–</b><span>inercia</span></div><div><b id="kshow">–</b><span>grupos</span></div></div>
+      <div class="groups" id="groups"></div>
+      <h3 style="margin-top:14px">Método del codo</h3>
+      <canvas id="elbow" aria-label="Inercia según el número de grupos K"></canvas>
+      <p class="dim" style="font-size:14px;margin:6px 0 0">La inercia baja siempre al añadir grupos, pero a partir del «codo» ya casi no mejora: ese suele ser un buen K. Haz clic en la gráfica para elegirlo.</p>
+      <div class="hint" id="hint" aria-live="polite"></div>
+    </aside>
+  </section>
+
+  <section aria-labelledby="ideas">
+    <h2 id="ideas">Las ideas</h2>
+    <div class="cards">
+      <div class="card"><h3>Sin respuestas</h3><p data-en='In <b>unsupervised</b> learning nobody says what each point is. The algorithm has to discover the structure on its own.'>En el aprendizaje <b>no supervisado</b> nadie dice qué es cada punto. El algoritmo tiene que descubrir la estructura él solo.</p></div>
+      <div class="card"><h3>Centros</h3><p data-en='Each group has a <b>centre</b> (centroid): the average of its points. You start with K centres placed more or less at random.'>Cada grupo tiene un <b>centro</b> (centroide): el punto medio de los suyos. Se empieza con K centros puestos más o menos al azar.</p></div>
+      <div class="card"><h3>Asignar y mover</h3><p>1) Cada punto se va con su centro más cercano. 2) Cada centro se mueve a la media de sus puntos. Se repite hasta que nada cambia.</p></div>
+      <div class="card"><h3>Elegir K</h3><p data-en='K has to be chosen. The <b>inertia</b> measures how tight the groups are; the <b>elbow method</b> helps you see how many make sense.'>K hay que decidirlo. La <b>inercia</b> mide lo apretados que están los grupos; el <b>método del codo</b> ayuda a ver cuántos tiene sentido usar.</p></div>
+      <div class="card"><h3>Sus límites</h3><p>K-Means supone grupos redondos y de tamaño parecido. Con anillos o formas alargadas se equivoca: prueba esos datos y lo verás.</p></div>
+    </div>
+  </section>
+  <footer class="foot">Diego José García Callejas · Laboratorio IA · hecho desde cero</footer>
+</div>
+<script src="../../js/logros.js?v=3"></script>
+<script src="kmeans.js?v=1"></script>
+<script src="app.js?v=2"></script>
+</body>
+</html>

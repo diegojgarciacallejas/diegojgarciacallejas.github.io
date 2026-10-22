@@ -1,0 +1,8 @@
+# por si alguna vez vuelve aquí material privado (CV con teléfono, capturas…): nunca se sube
+references/
+# archivos que crean Windows, macOS o los editores
+desktop.ini
+Thumbs.db
+.DS_Store
+*:Zone.Identifier
+*.tmp

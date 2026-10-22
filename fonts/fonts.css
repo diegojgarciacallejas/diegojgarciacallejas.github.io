@@ -1,0 +1,10 @@
+/* Las fuentes de la web, servidas desde aquí (sin Google Fonts: carga más fiable y no se envía la IP de nadie a terceros).
+   Solo el subconjunto latino, que incluye tildes, ñ, ¿ y ¡. Licencia SIL OFL (ver LICENSE-*.txt). */
+@font-face { font-family: "Pixelify Sans"; font-weight: 400; font-display: swap; src: url(pixelify-sans-400.woff2) format("woff2"); }
+@font-face { font-family: "Pixelify Sans"; font-weight: 600; font-display: swap; src: url(pixelify-sans-600.woff2) format("woff2"); }
+@font-face { font-family: "Pixelify Sans"; font-weight: 700; font-display: swap; src: url(pixelify-sans-700.woff2) format("woff2"); }
+@font-face { font-family: "Jersey 20"; font-weight: 400; font-display: swap; src: url(jersey-20-400.woff2) format("woff2"); }
+@font-face { font-family: "Hanken Grotesk"; font-weight: 400; font-display: swap; src: url(hanken-grotesk-400.woff2) format("woff2"); }
+@font-face { font-family: "Hanken Grotesk"; font-weight: 500; font-display: swap; src: url(hanken-grotesk-500.woff2) format("woff2"); }
+@font-face { font-family: "Hanken Grotesk"; font-weight: 700; font-display: swap; src: url(hanken-grotesk-700.woff2) format("woff2"); }
+@font-face { font-family: "VT323"; font-weight: 400; font-display: swap; src: url(vt323-400.woff2) format("woff2"); }
