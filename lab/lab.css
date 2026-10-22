@@ -87,3 +87,6 @@ section { margin: 28px 0; }
 /* en el móvil: los controles no hacen zoom con doble toque, no se seleccionan en azul ni dan destello al tocar */
 button, .btn, .seg, .chip, label, select, input[type="range"], canvas { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 canvas { -webkit-touch-callout: none; }
+
+/* el doble toque no amplía en ninguna parte de la página (en iPhone ampliaba una zona y costaba volver). El pellizco sí se permite */
+html { touch-action: manipulation; }

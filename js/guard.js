@@ -6,7 +6,12 @@
   if (window.top === window.self) return;
   var ours = false;
   try { ours = window.parent.location.origin === location.origin; } catch (e) { }   // otro origen: ni se puede leer
-  if (ours) { document.documentElement.classList.add('embedded'); return; }
+  if (ours) {
+    document.documentElement.classList.add('embedded');
+    // dentro del visor, un pellizco ampliaría el juego entero (con su barra de «Volver») y costaría deshacerlo
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false }); });
+    return;
+  }
   document.documentElement.style.display = 'none';
   try { window.top.location = location.href; } catch (e) { }
 })();
