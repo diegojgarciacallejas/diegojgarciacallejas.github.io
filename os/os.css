@@ -7,6 +7,9 @@
   --barh: 44px;
 }
 * { box-sizing: border-box; }
+html { touch-action: manipulation; }
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.tout, .note, input, textarea { -webkit-user-select: text; user-select: text; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--night); color: var(--cream); font: 500 15px/1.5 var(--text); }
 button { font: inherit; color: inherit; }
 img { image-rendering: pixelated; }

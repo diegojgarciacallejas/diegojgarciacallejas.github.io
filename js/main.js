@@ -15,6 +15,8 @@ var MOBILE = {
 var FULL_VIEW = { x: 0, y: 0, w: CFG.W, h: CFG.H }, ROOM_VIEW = { x: 180, y: 26, w: 600, h: 514 };   // el cuarto y su barra de abajo
 function wantedView() { return MOBILE.roomOnly() && window.Nav && Nav.current === 'Room' ? ROOM_VIEW : FULL_VIEW; }
 VIEW.crop = FULL_VIEW;
+// el iPhone no hace caso de user-scalable=no: el pellizco se para aquí (solo en el juego; en el CV y el laboratorio se puede ampliar)
+if (MOBILE.touch) ['gesturestart', 'gesturechange'].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false }); });
 // con pantalla táctil, los textos de ayuda hablan de tocar, no de teclas
 if (MOBILE.touch) {
   CFG.controls = t('Cruceta o toca el suelo para andar  ·  A o toca un objeto para usarlo');

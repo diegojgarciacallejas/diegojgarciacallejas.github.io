@@ -83,3 +83,7 @@ section { margin: 28px 0; }
   h1 { font-size: 30px; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* en el móvil: los controles no hacen zoom con doble toque, no se seleccionan en azul ni dan destello al tocar */
+button, .btn, .seg, .chip, label, select, input[type="range"], canvas { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+canvas { -webkit-touch-callout: none; }

@@ -7,7 +7,7 @@
 <script src="js/guard.js"></script>
 <script src="js/i18n.js?v=2"></script>
 <script src="js/lang-en.js?v=4"></script>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Diego.exe · Portfolio</title>
 <meta name="description" content="Un portfolio que se juega: camina por mi cuarto en pixel art y prueba mis proyectos de ciencia de datos e IA.">
 <meta name="theme-color" content="#0f0a1e">
@@ -27,6 +27,10 @@
 <link rel="stylesheet" href="fonts/fonts.css?v=1">
 <style>
   html, body { margin: 0; min-height: 100%; background: #0f0a1e; overflow: hidden; }
+  /* en el móvil es un juego, no una página: sin zoom por doble toque, sin selección azul y sin menú al mantener pulsado */
+  html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #game, #game canvas { touch-action: none; }
   body.zoomed { overflow: auto; }
   #game { margin: 0 auto; }
   canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
@@ -98,26 +102,26 @@
 <div id="game"></div>
 <noscript>Este portfolio es un juego y necesita JavaScript. Mientras tanto, aquí está mi <a href="cv/">expediente</a>.</noscript>
 <script src="lib/phaser.min.js"></script>
-<script src="js/sound.js?v=92"></script>
-<script src="js/logros.js?v=92"></script>
-<script src="js/config.js?v=92"></script>
-<script src="js/sprites.js?v=92"></script>
-<script src="js/clock.js?v=92"></script>
-<script src="js/weather.js?v=92"></script>
-<script src="js/room.js?v=92"></script>
-<script src="js/player.js?v=92"></script>
-<script src="js/bunny.js?v=92"></script>
-<script src="js/buddy.js?v=92"></script>
-<script src="js/interact.js?v=92"></script>
-<script src="js/build.js?v=92"></script>
-<script src="js/viewer.js?v=92"></script>
-<script src="js/dialog.js?v=92"></script>
-<script src="js/scenes.js?v=92"></script>
-<script src="js/people.js?v=92"></script>
-<script src="js/yard.js?v=92"></script>
-<script src="js/penalty.js?v=92"></script>
-<script src="js/main.js?v=92"></script>
+<script src="js/sound.js?v=93"></script>
+<script src="js/logros.js?v=93"></script>
+<script src="js/config.js?v=93"></script>
+<script src="js/sprites.js?v=93"></script>
+<script src="js/clock.js?v=93"></script>
+<script src="js/weather.js?v=93"></script>
+<script src="js/room.js?v=93"></script>
+<script src="js/player.js?v=93"></script>
+<script src="js/bunny.js?v=93"></script>
+<script src="js/buddy.js?v=93"></script>
+<script src="js/interact.js?v=93"></script>
+<script src="js/build.js?v=93"></script>
+<script src="js/viewer.js?v=93"></script>
+<script src="js/dialog.js?v=93"></script>
+<script src="js/scenes.js?v=93"></script>
+<script src="js/people.js?v=93"></script>
+<script src="js/yard.js?v=93"></script>
+<script src="js/penalty.js?v=93"></script>
+<script src="js/main.js?v=93"></script>
 <script src="js/pad.js?v=1"></script>
-<script src="js/hud.js?v=92"></script>
+<script src="js/hud.js?v=93"></script>
 </body>
 </html>
