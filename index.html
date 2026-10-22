@@ -6,7 +6,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <script src="js/guard.js"></script>
 <script src="js/i18n.js?v=2"></script>
-<script src="js/lang-en.js?v=3"></script>
+<script src="js/lang-en.js?v=4"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Diego.exe · Portfolio</title>
 <meta name="description" content="Un portfolio que se juega: camina por mi cuarto en pixel art y prueba mis proyectos de ciencia de datos e IA.">
@@ -51,6 +51,25 @@
   #hud .hlang { min-width: 44px; justify-content: center; color: #7cc59a; font-size: 20px; letter-spacing: 1px; }
   #rotate { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 4; padding: 8px 14px; background: #1a1130; border: 3px solid #4b3677; color: #f3eedc; font: 400 18px/1 "Jersey 20", monospace; letter-spacing: .5px; white-space: nowrap; }
   #rotate[hidden] { display: none; }
+  @media (orientation: portrait) { #rotate { bottom: 196px; } }   /* por encima del mando */
+  /* mando del móvil (js/pad.js): cruceta y botón A, estilo Game Boy */
+  #pad { position: fixed; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 6; display: flex; justify-content: space-between; align-items: center;
+    padding: 0 max(18px, env(safe-area-inset-left)) 0 max(18px, env(safe-area-inset-right)); pointer-events: none; user-select: none; -webkit-user-select: none; touch-action: none; }
+  #pad .dpad, #pad .abtn { pointer-events: auto; touch-action: none; -webkit-tap-highlight-color: transparent; }
+  #pad .dpad { width: 138px; height: 138px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+  #pad .dpad i { background: #2b2537; border: 3px solid #120b1c; box-shadow: inset 3px 3px 0 rgba(255,255,255,.14), inset -3px -3px 0 rgba(0,0,0,.35); position: relative; }
+  #pad .dpad i[data-k="up"] { grid-area: 1 / 2; border-bottom: 0; } #pad .dpad i[data-k="down"] { grid-area: 3 / 2; border-top: 0; }
+  #pad .dpad i[data-k="left"] { grid-area: 2 / 1; border-right: 0; } #pad .dpad i[data-k="right"] { grid-area: 2 / 3; border-left: 0; }
+  #pad .dpad i.mid { grid-area: 2 / 2; border-left: 0; border-right: 0; box-shadow: none; }
+  #pad .dpad i[data-k]::after { content: ""; position: absolute; left: 50%; top: 50%; border: 8px solid transparent; transform: translate(-50%, -50%); }
+  #pad .dpad i[data-k="up"]::after { border-bottom-color: #8f86a8; margin-top: -4px; } #pad .dpad i[data-k="down"]::after { border-top-color: #8f86a8; margin-top: 4px; }
+  #pad .dpad i[data-k="left"]::after { border-right-color: #8f86a8; margin-left: -4px; } #pad .dpad i[data-k="right"]::after { border-left-color: #8f86a8; margin-left: 4px; }
+  #pad .dpad i.on { background: #4b3677; }
+  #pad .abtn { width: 76px; height: 76px; border-radius: 50%; border: 4px solid #120b1c; background: #c0365b; color: #f3eedc; font: 700 30px/1 "Pixelify Sans", monospace;
+    box-shadow: inset 4px 4px 0 rgba(255,255,255,.3), inset -4px -4px 0 rgba(0,0,0,.3), 3px 3px 0 rgba(0,0,0,.4); cursor: pointer; margin-right: 6px; }
+  #pad .abtn.on { background: #8e2443; transform: translateY(2px); }
+  /* en horizontal, sobre los bordes del juego: más pequeño y medio transparente */
+  @media (orientation: landscape) { #pad { opacity: .72; } #pad .dpad { width: 118px; height: 118px; } #pad .abtn { width: 66px; height: 66px; font-size: 26px; } }
   .lpanel { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; padding: 16px; background: rgba(15,10,30,.78); }
   .lbox { width: min(760px, 100%); max-height: calc(100% - 8px); overflow: auto; padding: 22px 26px 16px; background: #140d26; border: 4px solid #9c8ad6; box-shadow: 8px 8px 0 rgba(0,0,0,.5); color: #f3eedc; }
   .lhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
@@ -79,25 +98,26 @@
 <div id="game"></div>
 <noscript>Este portfolio es un juego y necesita JavaScript. Mientras tanto, aquí está mi <a href="cv/">expediente</a>.</noscript>
 <script src="lib/phaser.min.js"></script>
-<script src="js/sound.js?v=89"></script>
-<script src="js/logros.js?v=89"></script>
-<script src="js/config.js?v=89"></script>
-<script src="js/sprites.js?v=89"></script>
-<script src="js/clock.js?v=89"></script>
-<script src="js/weather.js?v=89"></script>
-<script src="js/room.js?v=89"></script>
-<script src="js/player.js?v=89"></script>
-<script src="js/bunny.js?v=89"></script>
-<script src="js/buddy.js?v=89"></script>
-<script src="js/interact.js?v=89"></script>
-<script src="js/build.js?v=89"></script>
-<script src="js/viewer.js?v=89"></script>
-<script src="js/dialog.js?v=89"></script>
-<script src="js/scenes.js?v=89"></script>
-<script src="js/people.js?v=89"></script>
-<script src="js/yard.js?v=89"></script>
-<script src="js/penalty.js?v=89"></script>
-<script src="js/main.js?v=89"></script>
-<script src="js/hud.js?v=89"></script>
+<script src="js/sound.js?v=90"></script>
+<script src="js/logros.js?v=90"></script>
+<script src="js/config.js?v=90"></script>
+<script src="js/sprites.js?v=90"></script>
+<script src="js/clock.js?v=90"></script>
+<script src="js/weather.js?v=90"></script>
+<script src="js/room.js?v=90"></script>
+<script src="js/player.js?v=90"></script>
+<script src="js/bunny.js?v=90"></script>
+<script src="js/buddy.js?v=90"></script>
+<script src="js/interact.js?v=90"></script>
+<script src="js/build.js?v=90"></script>
+<script src="js/viewer.js?v=90"></script>
+<script src="js/dialog.js?v=90"></script>
+<script src="js/scenes.js?v=90"></script>
+<script src="js/people.js?v=90"></script>
+<script src="js/yard.js?v=90"></script>
+<script src="js/penalty.js?v=90"></script>
+<script src="js/main.js?v=90"></script>
+<script src="js/pad.js?v=1"></script>
+<script src="js/hud.js?v=90"></script>
 </body>
 </html>

@@ -84,6 +84,10 @@ Object.assign(EN, {
   'Date una vuelta por la habitación. Cada objeto esconde un proyecto, así que cotillea todo lo que quieras.': 'Take a look around. Every object hides a project, so feel free to snoop around.',
 
   /* ---------- el juego: textos del código ---------- */
+  'Cruceta o toca el suelo para andar  ·  A o toca un objeto para usarlo': 'D-pad or tap the floor to walk  ·  A or tap an object to use it',
+  '{name}: pulsa A o tócalo': '{name}: press A or tap it', 'Cruceta o toca para andar  ·  habla con la gente desde la valla': 'D-pad or tap to walk  ·  talk to people from the fence',
+  '¡A columpiarse!  ·  A o toca para bajarte': 'Swing time!  ·  A or tap to get off',
+  'Tiro {0} de {1}  ·  Toca o pulsa A para fijar la DIRECCIÓN': 'Shot {0} of {1}  ·  Tap or press A to set the DIRECTION', 'Ahora toca o pulsa A para fijar la ALTURA': 'Now tap or press A to set the HEIGHT', 'Toca o pulsa A para otra tanda': 'Tap or press A for another round',
   '← Patio': '← Yard', 'Tiro {0} de {1}  ·  Toca para fijar la DIRECCIÓN': 'Shot {0} of {1}  ·  Tap to set the DIRECTION', 'Ahora toca para fijar la ALTURA': 'Now tap to set the HEIGHT', 'Toca para otra tanda': 'Tap for another round',
   'DiegOS está pensado para ordenador: ventanas, terminal… En el móvil se usa tocando los comandos subrayados. ¿Lo abro igualmente?': 'DiegOS is designed for a computer: windows, a terminal… On a phone you use it by tapping the underlined commands. Open it anyway?',
   'ABRIR': 'OPEN',

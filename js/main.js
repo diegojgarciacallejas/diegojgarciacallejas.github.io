@@ -17,10 +17,10 @@ function wantedView() { return MOBILE.roomOnly() && window.Nav && Nav.current ==
 VIEW.crop = FULL_VIEW;
 // con pantalla táctil, los textos de ayuda hablan de tocar, no de teclas
 if (MOBILE.touch) {
-  CFG.controls = t('Toca el suelo para andar  ·  toca un objeto para usarlo');
-  CFG.controlsNear = t('{name}: tócalo o toca la «!»');
-  CFG.controlsYard = t('Toca para andar  ·  habla con la gente desde la valla');
-  CFG.controlsSwing = t('¡A columpiarse!  ·  toca para bajarte');
+  CFG.controls = t('Cruceta o toca el suelo para andar  ·  A o toca un objeto para usarlo');
+  CFG.controlsNear = t('{name}: pulsa A o tócalo');
+  CFG.controlsYard = t('Cruceta o toca para andar  ·  habla con la gente desde la valla');
+  CFG.controlsSwing = t('¡A columpiarse!  ·  A o toca para bajarte');
 }
 
 // todo texto nuevo se crea a la resolución de la pantalla
@@ -55,6 +55,8 @@ function eachText(list, fn) {
      Otros cambios (otra pantalla con otra densidad) recalibran la base: el juego siempre cabe. */
   var baseDpr = window.devicePixelRatio || 1, lastDpr = baseDpr, ctrlAt = -1e9, el = document.getElementById('game');
   var lastPhys = window.innerWidth * baseDpr;
+  // en el móvil en vertical, el mando (pad.js) va debajo del juego: se le reserva ese hueco
+  function padSpace() { return MOBILE.touch && MOBILE.portrait() ? 190 : 0; }
   window.addEventListener('keydown', function (e) { if (e.ctrlKey || e.metaKey) ctrlAt = Date.now(); }, true);
   window.addEventListener('wheel', function (e) { if (e.ctrlKey) ctrlAt = Date.now(); }, { capture: true, passive: true });
 
@@ -64,14 +66,14 @@ function eachText(list, fn) {
     if (dpr !== lastDpr && Date.now() - ctrlAt > 1500 && !sameWindow) baseDpr *= dpr / lastDpr;
     lastDpr = dpr; lastPhys = phys;
     var z = Math.max(0.25, Math.min(5, dpr / baseDpr));
-    var c = VIEW.crop, k = Math.min(window.innerWidth * z / c.w, window.innerHeight * z / c.h);
+    var c = VIEW.crop, k = Math.min(window.innerWidth * z / c.w, (window.innerHeight - padSpace()) * z / c.h);
     VIEW.cssW = Math.floor(c.w * k); VIEW.cssH = Math.floor(c.h * k);
     VIEW.pxW = Math.round(VIEW.cssW * dpr); VIEW.pxH = Math.round(VIEW.cssH * dpr);
     VIEW.z = VIEW.pxW / c.w;
   }
   function place() {
     el.style.width = VIEW.cssW + 'px'; el.style.height = VIEW.cssH + 'px';
-    el.style.marginTop = Math.max(0, Math.floor((window.innerHeight - VIEW.cssH) / 2)) + 'px';
+    el.style.marginTop = Math.max(0, Math.floor((window.innerHeight - padSpace() - VIEW.cssH) / 2)) + 'px';
     document.body.classList.toggle('zoomed', VIEW.cssW > window.innerWidth + 1 || VIEW.cssH > window.innerHeight + 1);
     var cv = window.game && game.canvas;
     if (cv) { cv.style.width = VIEW.cssW + 'px'; cv.style.height = VIEW.cssH + 'px'; }

@@ -122,11 +122,11 @@ var Penalty = new Phaser.Class({
     this.keeper.setAngle(0).setY(PEN.goal.line * S).setX((PEN.keeper.x - 3) * S);
     this.tweens.add({ targets: this.keeper, x: (PEN.keeper.x + 3) * S, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });   // se balancea bajo palos
     this.aim.setVisible(true);
-    this.help.setText(MOBILE.touch ? t('Tiro {0} de {1}  ·  Toca para fijar la DIRECCIÓN', this.n + 1, PEN.shots) : t('Tiro {0} de {1}  ·  Espacio, Enter o clic: fija la DIRECCIÓN  ·  Esc: volver al patio', this.n + 1, PEN.shots));
+    this.help.setText(MOBILE.touch ? t('Tiro {0} de {1}  ·  Toca o pulsa A para fijar la DIRECCIÓN', this.n + 1, PEN.shots) : t('Tiro {0} de {1}  ·  Espacio, Enter o clic: fija la DIRECCIÓN  ·  Esc: volver al patio', this.n + 1, PEN.shots));
   },
 
   press: function () {
-    if (this.phase === 'x') { this.phase = 'y'; this.t0 = this.time.now; this.help.setText(t(MOBILE.touch ? 'Ahora toca para fijar la ALTURA' : 'Ahora fija la ALTURA  ·  Espacio, Enter o clic')); }
+    if (this.phase === 'x') { this.phase = 'y'; this.t0 = this.time.now; this.help.setText(t(MOBILE.touch ? 'Ahora toca o pulsa A para fijar la ALTURA' : 'Ahora fija la ALTURA  ·  Espacio, Enter o clic')); }
     else if (this.phase === 'y') this.shoot();
     else if (this.phase === 'end') this.reset(true);
   },
@@ -180,7 +180,7 @@ var Penalty = new Phaser.Class({
       self.tweens.killTweensOf(self.big);
       self.big.setText(msg).setStroke('#2a1f4f', 8).setScale(0.6).setAlpha(1);
       self.tweens.add({ targets: self.big, scale: 0.75, duration: 300, ease: 'Back.out' });
-      self.help.setText(t(MOBILE.touch ? 'Toca para otra tanda' : 'Espacio, Enter o clic: otra tanda  ·  Esc: volver al patio'));
+      self.help.setText(t(MOBILE.touch ? 'Toca o pulsa A para otra tanda' : 'Espacio, Enter o clic: otra tanda  ·  Esc: volver al patio'));
     });
   },
 
