@@ -472,5 +472,7 @@ Object.assign(EN, {
   'ls [-a] [-l] [ruta]': 'ls [-a] [-l] [path]', 'cd <ruta>': 'cd <path>', 'cat <archivo>': 'cat <file>', 'open <app|archivo>': 'open <app|file>', 'calc <cuenta>': 'calc <sum>', 'nano <archivo>': 'nano <file>'
 });
 
+Object.assign(EN, { 'Así se caería: ponla en la placa, encima de otra pieza o pegada a una.': 'It would fall: put it on the plate, on top of another brick or next to one.' });
+
 // a partir de aquí, lo que aparezca en las páginas HTML se traduce solo
 I18N.observe();

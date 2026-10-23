@@ -105,6 +105,49 @@ function fits(p) {
   var o = occupancy();
   return cells(p).every(function (c) { return c[0] >= 0 && c[0] < N && c[2] >= 0 && c[2] < N && c[1] >= 0 && c[1] < MAXH && !o[c.join()]; });
 }
+/* ¿se sostiene? En la placa, encima de otra pieza (basta con que una casilla tenga algo debajo) o pegada a un lado de otra.
+   En el aire, solo, no: así nada flota. */
+var SIDES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+function support(p) {
+  if (p.y === 0) return true;
+  var o = occupancy();
+  return cells(p).some(function (c) {
+    if (o[[c[0], c[1] - 1, c[2]].join()]) return true;                                          // algo debajo
+    return SIDES.some(function (s) { return o[[c[0] + s[0], c[1], c[2] + s[1]].join()]; });     // algo al lado
+  });
+}
+/* piezas que tocan a p por alguna cara (arriba, abajo o los lados) */
+function touching(p, o) {
+  var out = [];
+  cells(p).forEach(function (c) {
+    [[0, 1, 0], [0, -1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]].forEach(function (d) {
+      var q = o[[c[0] + d[0], c[1] + d[1], c[2] + d[2]].join()];
+      if (q && q !== p && out.indexOf(q) < 0) out.push(q);
+    });
+  });
+  return out;
+}
+/* tras quitar una pieza: las que se quedan sin unión con la placa caen hasta apoyarse. Devuelve las que han bajado [[pieza, y anterior]] */
+function settle() {
+  var moved = [];
+  for (var pass = 0; pass < 30; pass++) {
+    var o = occupancy(), grounded = [], queue = st.pieces.filter(function (p) { return p.y === 0; });
+    grounded = queue.slice();
+    while (queue.length) touching(queue.pop(), o).forEach(function (q) { if (grounded.indexOf(q) < 0) { grounded.push(q); queue.push(q); } });
+    var loose = st.pieces.filter(function (p) { return grounded.indexOf(p) < 0; });
+    if (!loose.length) break;
+    // un grupo suelto (piezas unidas entre sí) baja junto
+    var group = [loose[0]], q2 = [loose[0]];
+    while (q2.length) touching(q2.pop(), o).forEach(function (q) { if (loose.indexOf(q) >= 0 && group.indexOf(q) < 0) { group.push(q); q2.push(q); } });
+    var rest = {}; st.pieces.forEach(function (p) { if (group.indexOf(p) < 0) cells(p).forEach(function (c) { rest[c.join()] = 1; }); });
+    var drop = 0;
+    while (group.every(function (p) { return p.y - drop - 1 >= 0 && cells(p).every(function (c) { return !rest[[c[0], c[1] - drop - 1, c[2]].join()]; }); })) drop++;
+    if (!drop) break;
+    group.forEach(function (p) { moved.push([p, p.y]); p.y -= drop; });
+  }
+  return moved;
+}
+function meshY(p) { return p.y * BH + BH / 2; }
 function dims() { var d = SIZES[st.size]; return st.rot ? [d[1], d[0]] : d; }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
@@ -116,7 +159,8 @@ function add(p, record) {
 }
 function remove(p, record) {
   built.remove(p.mesh); st.pieces = st.pieces.filter(function (x) { return x !== p; });
-  if (record !== false) st.undo.push({ del: p });
+  var fell = settle();                                                    // lo que se quedaba en el aire cae
+  if (record !== false) st.undo.push({ del: p, fell: fell });
   changed();
 }
 
@@ -143,10 +187,13 @@ function placement(hit) {
   var z0 = n.z > 0 ? t.z : n.z < 0 ? t.z - dd + 1 : t.z - Math.floor((dd - 1) / 2);
   if (n.y !== 0) { x0 = clamp(x0, 0, N - w); z0 = clamp(z0, 0, N - dd); }   // encima: que no se salga de la placa
   var p = { x: x0, y: t.y, z: z0, w: w, d: dd, c: st.color };
-  p.ok = fits(p);
+  p.fits = fits(p); p.ok = p.fits && support(p);
+  p.air = p.fits && !p.ok;                                               // cabe, pero se quedaría en el aire
   return p;
 }
+function warn(on) { $('warn').textContent = on ? t('Así se caería: ponla en la placa, encima de otra pieza o pegada a una.') : ''; }
 function hover(e) {
+  warn(false);
   if (preview) { scene.remove(preview); preview = null; }
   st.pieces.forEach(function (p) { p.mesh.userData.body.material = mat(p.c); });
   st.hover = null;
@@ -156,6 +203,7 @@ function hover(e) {
     board.style.cursor = hit.piece ? 'pointer' : 'grab'; return;
   }
   var p = placement(hit);
+  warn(p.air);
   preview = brickMesh(p, mat(p.c, p.ok ? 'ok' : 'bad')); scene.add(preview);
   st.hover = { add: p, piece: hit.piece }; board.style.cursor = p.ok ? 'crosshair' : 'not-allowed';
 }
@@ -298,7 +346,9 @@ $('rotate').addEventListener('click', function () { st.rot = !st.rot; });
 $('eraser').addEventListener('click', function () { st.eraser = !st.eraser; $('eraser').setAttribute('aria-pressed', String(st.eraser)); swatches(); });
 function undo() {
   var a = st.undo.pop(); if (!a) return;
-  if (a.add) remove(a.add, false); else add(a.del, false);
+  if (a.add) { remove(a.add, false); return; }
+  (a.fell || []).forEach(function (m) { m[0].y = m[1]; m[0].mesh.position.y = meshY(m[0]); });   // lo que cayó vuelve a su sitio
+  add(a.del, false);
 }
 $('undo').addEventListener('click', undo);
 $('clear').addEventListener('click', function () { clearAll(); changed(); });
@@ -330,6 +380,12 @@ var last = performance.now();
 function frame(now) {
   var dt = Math.min(0.05, (now - last) / 1000); last = now;
   view.theta += (view.goal - view.theta) * Math.min(1, dt * 10);          // los giros de 45° van suaves
+  // las piezas que se han quedado sin apoyo caen con gravedad hasta su sitio
+  st.pieces.forEach(function (p) {
+    var y = meshY(p), m = p.mesh;
+    if (m.position.y > y + 0.001) { p.vy = (p.vy || 0) + 40 * dt; m.position.y = Math.max(y, m.position.y - p.vy * dt); if (m.position.y === y) p.vy = 0; }
+    else if (m.position.y < y) m.position.y = y;
+  });
   fit(R, cam, board); placeCam(cam, view, 0.9); R.render(scene, cam);
   mview.theta += dt * 0.5; fit(MR, mcam, mcan); placeCam(mcam, mview, 0); MR.render(mscene, mcam);
   requestAnimationFrame(frame);
