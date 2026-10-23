@@ -92,7 +92,11 @@ var OS = (function () {
     if (n.type === 'dir') open('archivos', abs);
     else if (n.type === 'app') open(n.app);
     else if (n.type === 'link') window.open(n.url, '_blank', 'noopener');
-    else if (n.type === 'file' && !n.locked) open('notas', abs);
+    else if (n.type === 'file' && !n.locked) {
+      if (n.item) Logros.find(n.item);                                    // un objeto oculto (el pendrive), se abra como se abra
+      if (FSX.name(abs)[0] === '.') Logros.unlock('oculto');
+      open('notas', abs);
+    }
   }
 
   /* ---- Archivos ---- */
