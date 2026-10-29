@@ -33,7 +33,7 @@ Then open <http://localhost:8000> (opening `index.html` directly does not work).
 ## Project structure
 
 ```
-index.html        the game          js/          game code (config.js holds texts and settings)
+index.html        the game          js/          game code (config.js holds texts and settings; cars.js the street's vehicles)
 lab/              AI lab            os/          DiegOS
 juegos/piezas/    3D blocks game    cv/          résumé page and PDFs
 fonts/  img/  lib/                  fonts, images and third-party libraries

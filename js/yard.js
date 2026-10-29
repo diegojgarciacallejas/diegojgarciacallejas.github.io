@@ -7,6 +7,11 @@ var YARD = {
   goal: { x0: 100, x1: 135, top: 92, foot: 114 },        // portería (a la izquierda, junto al cerezo): entre postes y larguero
   swing: { x: 54, y: 101 },                              // de dónde cuelga el columpio
   lanes: [{ y: 64, dir: -1 }, { y: 72, dir: 1 }],        // carriles: y de las ruedas y sentido
+  cross: { x0: 150, x1: 170 },                           // paso de cebra
+  stop: { right: 148, left: 172 },                       // dónde paran los coches que van a la derecha (su morro) y a la izquierda
+  // los dos semáforos: x e y de la caja de luces (5 x 10 píxeles) y la y donde está el suelo de su poste; el de enfrente queda en la acera de enfrente
+  heads: [{ x: 143, y: 51, base: 78, depth: 5 }, { x: 173, y: 35, base: 55, depth: 2.6 }],
+  light: [['green', 11000], ['amber', 2200], ['red', 6500]],   // el ciclo: verde, ámbar, rojo (pasa la gente)
   walks: [{ y: 55, scale: 2 }, { y: 78, scale: 3 }],     // aceras: y de los pies y tamaño (la de enfrente, más lejos)
   lamps: [40, 120, 200, 280]                             // farolas de nuestra acera (x)
 };
@@ -110,6 +115,10 @@ function drawYardBase(ctx, phase) {
   R(0, 52, W, 4, '#d6cfc2'); R(0, 55, W, 1, '#a89f90');
   R(0, 56, W, 16, '#545a68'); R(0, 56, W, 1, '#464b57');
   for (x = 3; x < W; x += 18) R(x, 63, 9, 1, '#f3eedc');
+  // paso de cebra con sus líneas de parada y los postes de los semáforos (las luces se pintan aparte: cambian)
+  for (x = YARD.cross.x0 + 1; x < YARD.cross.x1; x += 4) R(x, 57, 3, 14, '#ece7d9');
+  R(YARD.stop.right, 64, 1, 8, '#f3eedc'); R(YARD.stop.left, 56, 1, 8, '#f3eedc');
+  YARD.heads.forEach(function (h) { R(h.x + 2, h.y + 10, 1, h.base - h.y - 10, '#4a5468'); R(h.x + 1, h.base - 1, 3, 1, '#4a5468'); });
   R(0, 72, W, 1, '#a89f90'); R(0, 73, W, 6, '#d6cfc2');
   for (x = 0; x < W; x += 12) R(x, 73, 1, 6, '#c4bcae');
   // farolas en nuestra acera
@@ -204,9 +213,6 @@ function drawYardGoal(ctx) {
 }
 
 /* coches de perfil (mirando a la derecha); cada color, su paleta */
-var CAR_ROWS = ['.......ooooooooo..........', '......obbbbobbbbbo........', '.....obbbbbobbbbbbo.......', '..ooocccccccccccccccooo...',
-  '.o' + 'c'.repeat(22) + 'o.', 'o' + 'c'.repeat(23) + 'yo', 'oCCCoKKKKoCCCCCCoKKKKoCCCo', '.oooKKhhKKooooooKKhhKKooo.', '....KKhhKK......KKhhKK....', '.....KKKK........KKKK.....'];
-var CAR_COLORS = [['#d9665a', '#a84a40'], ['#4f8fd9', '#3c72b8'], ['#f2c14e', '#c9982e'], ['#6cbf7a', '#4f9a5a'], ['#f4efe6', '#cfc4b3'], ['#9b6fd1', '#7a52ad']];
 var CLOUD_ROWS = ['....wwww........', '..wwwwwwww.www..', '.wwwwwwwwwwwwwww', 'wwwwwwwwwwwwwwww', '.ssssssssssssss.'];
 var BALL_ROWS = ['..oooo..', '.owwkwo.', 'owwkkkwo', 'owwwkwwo', 'okwwwwko', 'okkwwkko', '.owwwwo.', '..oooo..'];
 
@@ -252,8 +258,12 @@ function ensureYardTextures(scene) {
     tx.addCanvas('yard_tree', canvas(drawYardTree));
     tx.addCanvas('yard_goal', canvas(drawYardGoal));
   }
-  CAR_COLORS.forEach(function (c, i) {
-    makeTexture(scene, 'car' + i, CAR_ROWS, { o: '#2b1d2e', c: c[0], C: c[1], b: '#a9defb', y: '#ffe36e', K: '#1b1b22', h: '#c9cfe0' });
+  // coches: cada modelo (cars.js) en cada color; los que no cambian de color (taxi, policía, autobús), una sola vez
+  CAR_MODELS.forEach(function (m) {
+    (m.kind === 'fixed' ? [null] : CAR_BODY).forEach(function (b, i) {
+      var pal = Object.assign({}, CAR_PAL, m.pal || {}); if (b) { pal.c = b[0]; pal.C = b[1]; }
+      makeTexture(scene, 'car_' + m.id + '_' + i, m.rows, pal);
+    });
   });
   makeTexture(scene, 'cloud', CLOUD_ROWS, { w: '#ffffff', s: '#e3f2fc' });
   makeTexture(scene, 'ball', BALL_ROWS, { o: '#2b1d2e', w: '#fffaf0', k: '#2b1d2e' });
@@ -308,6 +318,7 @@ var Yard = new Phaser.Class({
     this.calm = night ? 3 : 1;                                                      // de noche, menos coches y menos gente
     // coches y gente: cada carril y cada acera sacan a alguien de vez en cuando
     this.cars = []; this.nextCar = [500, 1600];
+    this.makeLights(night || ph === 'dusk');
     this.walkers = []; this.nextWalker = [300, 1200]; this.talkTo = null; this.said = [];
     this.neighbour = YARD_OBJECTS.filter(function (o) { return o.id === 'vecino'; })[0]; this.neighbour.off = true;
     for (var i = 0; i < (night ? 1 : 3); i++) this.spawnWalker(i % 2, Math.random() * YARD.W);
@@ -429,12 +440,74 @@ var Yard = new Phaser.Class({
     this.dlg.show(seq, function () { m.talking = false; m.hold = self.time.now + 600; });   // se despide y sigue su camino
   },
 
+  /* ---- coches: cada uno mira al de delante (y al semáforo) y frena o acelera; nunca se tocan ---- */
+  carFront: function (c) { return c.dir > 0 ? c.ax + c.len : -c.ax; },        // el morro, en «metros» de su carril (siempre crecen hacia delante)
+  carRear: function (c) { return this.carFront(c) - c.len; },
+  /* un modelo al azar (los habituales salen más) */
+  pickModel: function () {
+    var total = CAR_MODELS.reduce(function (a, m) { return a + m.weight; }, 0), r = Math.random() * total, k = 0;
+    for (var i = 0; i < CAR_MODELS.length; i++) { k += CAR_MODELS[i].weight; if (r < k) return CAR_MODELS[i]; }
+    return CAR_MODELS[0];
+  },
+  /* sale un coche por un extremo, si hay sitio; devuelve si salió */
   spawnCar: function (lane) {
-    var L = YARD.lanes[lane], S = STAGE.S, kind = Math.floor(Math.random() * CAR_COLORS.length);
-    var x = L.dir > 0 ? -30 : YARD.W + 4, im = this.add.image(x * S, L.y * S, 'car' + kind).setOrigin(0, 1).setScale(S).setFlipX(L.dir < 0).setDepth(3 + lane);
-    im.ax = x; im.v = L.dir * (45 + Math.random() * 40); im.dir = L.dir;
-    if (this.phase === 'night') im.light = glow(this, 0, (L.y - 5) * S, 9 * S, 0xfff2b0, 0.7).setScale(9 * S / 32, 3 * S / 32);   // faros
+    var L = YARD.lanes[lane], S = STAGE.S, m = this.pickModel(), len = m.rows[0].length, self = this;
+    var variant = m.kind === 'fixed' ? 0 : Math.floor(Math.random() * CAR_BODY.length);
+    var x = L.dir > 0 ? -len - 2 : YARD.W + 4, v0 = m.speed[0] + Math.random() * (m.speed[1] - m.speed[0]);
+    var front = L.dir > 0 ? x + len : -x;
+    if (this.cars.some(function (c) { return c.dir === L.dir && self.carRear(c) < front + 12; })) return false;   // el anterior aún está en la entrada
+    var im = this.add.image(x * S, L.y * S, 'car_' + m.id + '_' + variant).setOrigin(0, 1).setScale(S).setFlipX(L.dir < 0).setDepth(3 + lane);
+    im.ax = x; im.v0 = v0; im.v = v0 * 0.6; im.dir = L.dir; im.len = len; im.lane = lane; im.committed = false;
+    if (this.phase === 'night') im.light = glow(this, 0, (L.y - 4) * S, 9 * S, 0xfff2b0, 0.7).setScale(9 * S / 32, 3 * S / 32);   // faros
     this.cars.push(im);
+    return true;
+  },
+  /* un coche: su velocidad deseada, bajada por el de delante y por el semáforo; frena fuerte y acelera despacio */
+  driveCar: function (c, dt) {
+    var self = this, vt = c.v0, front = this.carFront(c), lead = null, best = Infinity, state = this.lightState;
+    this.cars.forEach(function (o) {
+      if (o === c || o.dir !== c.dir) return;
+      var r = self.carRear(o);
+      if (r > self.carRear(c) + 0.1 && r < best) { best = r; lead = o; }
+    });
+    if (lead) vt = Math.min(vt, Math.max(0, lead.v + (best - front - 6) * 2));   // a 6 píxeles va como el de delante; más cerca, frena hasta parar
+    if (state === 'green') c.committed = false;
+    else if (!c.committed) {                                                       // ámbar o rojo, y aún no ha cruzado la línea
+      var stopAt = c.dir > 0 ? YARD.stop.right : -YARD.stop.left, dist = stopAt - front;
+      if (dist > -0.5) {
+        var canStop = dist > c.v * c.v / (2 * 90) + 3;                             // con el ámbar: si no le da tiempo a parar, pasa
+        if (state === 'amber' && !canStop) c.committed = true;
+        else if (state === 'red' && dist < c.v * c.v / 400) c.committed = true;    // en rojo, solo si ya no puede parar de ninguna manera
+        else vt = Math.min(vt, Math.max(0, dist * 2.5 - 1.5));
+      }
+    }
+    var dv = vt - c.v, sec = dt / 1000;
+    c.v = Math.max(0, c.v + Math.max(-220 * sec, Math.min(60 * sec, dv)));
+    c.ax += c.dir * c.v * sec;
+    if (lead && this.carRear(lead) - this.carFront(c) < 1) {                       // por si acaso: nunca se tocan
+      var f = this.carRear(lead) - 1;
+      c.ax = c.dir > 0 ? f - c.len : -f; c.v = Math.min(c.v, lead.v);
+    }
+  },
+  /* el semáforo: dos postes, uno a cada lado de la calle; el mismo color en los dos (pasa la gente por el paso de cebra) */
+  makeLights: function (glows) {
+    var S = STAGE.S, self = this;
+    this.lightT = Math.random() * YARD.light.reduce(function (a, p) { return a + p[1]; }, 0); this.lightState = '';
+    this.heads = YARD.heads.map(function (h) {
+      return { g: self.add.graphics().setDepth(h.depth), glow: glows ? glow(self, (h.x + 2.5) * S, (h.y + 5) * S, 9 * S, 0xffffff, 0.8).setVisible(false) : null, h: h };
+    });
+  },
+  setLight: function (state) {
+    var S = STAGE.S, LAMPS = { red: ['#ff4d3d', '#4a1d1d', 0xff4d3d], amber: ['#ffc83d', '#4a3a14', 0xffc83d], green: ['#4dff7a', '#14401f', 0x4dff7a] };
+    this.lightState = state;
+    this.heads.forEach(function (o) {
+      var g = o.g, h = o.h; g.clear();
+      g.fillStyle(0x1b1b22, 1).fillRect(h.x * S, h.y * S, 5 * S, 10 * S);
+      ['red', 'amber', 'green'].forEach(function (k, i) {
+        g.fillStyle(parseInt((k === state ? LAMPS[k][0] : LAMPS[k][1]).slice(1), 16), 1).fillRect((h.x + 1) * S, (h.y + 1 + i * 3) * S, 3 * S, 2 * S);
+      });
+      if (o.glow) o.glow.setTint(LAMPS[state][2]).setY((h.y + 2 + ['red', 'amber', 'green'].indexOf(state) * 3) * S).setVisible(true);
+    });
   },
   /* alguien paseando por una acera (0 = la de enfrente, más pequeña; 1 = la nuestra); x: dónde aparece */
   spawnWalker: function (side, x) {
@@ -462,11 +535,16 @@ var Yard = new Phaser.Class({
     this.controls.setVisible(!this.dlg.open);
     this.clouds.forEach(function (c) { c.x += c.sp * S * dt / 1000 * 3; if (c.x > YARD.W * S) c.x = -20 * S; });
     // coches
-    this.nextCar = this.nextCar.map(function (w, lane) { w -= dt; if (w <= 0) { self.spawnCar(lane); w = (1600 + Math.random() * 2800) * self.calm; } return w; });
+    // semáforo: cambia solo, verde → ámbar → rojo
+    var cycle = YARD.light.reduce(function (n, p) { return n + p[1]; }, 0), pos = (this.lightT += dt) % cycle, st = YARD.light[0][0];
+    for (var li = 0, acc = 0; li < YARD.light.length; li++) { acc += YARD.light[li][1]; if (pos < acc) { st = YARD.light[li][0]; break; } }
+    if (st !== this.lightState) this.setLight(st);
+    this.nextCar = this.nextCar.map(function (w, lane) { w -= dt; if (w <= 0) { w = self.spawnCar(lane) ? (1600 + Math.random() * 2800) * self.calm : 400; } return w; });
+    this.cars.forEach(function (c) { self.driveCar(c, dt); });
     this.cars = this.cars.filter(function (c) {
-      c.ax += c.v * dt / 1000; c.x = Math.round(c.ax) * S;
-      if (c.light) c.light.x = (c.dir > 0 ? c.ax + 30 : c.ax - 4) * S;
-      if (c.ax < -40 || c.ax > YARD.W + 10) { if (c.light) c.light.destroy(); c.destroy(); return false; }
+      c.x = Math.round(c.ax) * S;
+      if (c.light) c.light.x = (c.dir > 0 ? c.ax + c.len + 4 : c.ax - 4) * S;
+      if (c.ax < -c.len - 12 || c.ax > YARD.W + 12) { if (c.light) c.light.destroy(); c.destroy(); return false; }
       return true;
     });
     // gente paseando, con su paso
