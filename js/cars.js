@@ -1,10 +1,10 @@
 /* Los coches de la calle del patio (yard.js): dibujados en pixel art, mirando a la derecha (el frente a la derecha;
    al ir hacia la izquierda se voltean). Cada letra es un color de CAR_PAL:
    o contorno · c carrocería · C carrocería oscura · b cristal · y faro · r piloto/luz roja · B luz azul · K rueda · h llanta
-   w blanco · g gris · d oscuro · s detalle (franja, rótulo, barras…).
+   w blanco · g gris · d oscuro · s detalle (franja, rótulo, barras…) · l luz del techo del taxi (alts: sus dos estados).
    kind: 'c' = se pinta de un color al azar (CAR_BODY) · 'fixed' = siempre igual (taxi, policía, autobús)
    weight: lo habitual que es · speed: velocidad en píxeles de arte por segundo (mínima y máxima) */
-var CAR_PAL = { o: '#2b1d2e', b: '#a9defb', y: '#ffe36e', r: '#e0453a', B: '#4f8fd9', K: '#1b1b22', h: '#c9cfe0', w: '#f4efe6', g: '#8f96a8', d: '#2e3350', s: '#e9e4d6' };
+var CAR_PAL = { o: '#2b1d2e', b: '#a9defb', y: '#ffe36e', r: '#e0453a', B: '#4f8fd9', K: '#1b1b22', h: '#c9cfe0', w: '#f4efe6', g: '#8f96a8', d: '#2e3350', s: '#e9e4d6', l: '#4dff7a' };
 var CAR_BODY = [['#d9665a', '#a84a40'], ['#4f8fd9', '#3c72b8'], ['#f2c14e', '#c9982e'], ['#6cbf7a', '#4f9a5a'], ['#f4efe6', '#cfc4b3'], ['#9b6fd1', '#7a52ad'],
   ['#f08a3c', '#c4691f'], ['#5fc9c9', '#42a3a3'], ['#8a93a6', '#6a7386'], ['#3b4252', '#2b303d']];
 var CAR_MODELS = [
@@ -35,9 +35,10 @@ var CAR_MODELS = [
     '.....oKKo.......oKKo....',
     '......oo.........oo.....'
   ] },
-  { id: 'taxi', kind: 'fixed', weight: 10, speed: [45, 80], pal: { c: '#f4efe6', C: '#cfc4b3', s: '#d9453a' }, rows: [
+  // el taxi tiene dos estados (alts): 0 = libre (luz verde en el techo) · 1 = ocupado (luz apagada)
+  { id: 'taxi', kind: 'fixed', weight: 14, speed: [45, 80], pal: { c: '#f4efe6', C: '#cfc4b3', s: '#d9453a' }, alts: [{ l: '#4dff7a' }, { l: '#3a3f4a' }], rows: [
     '............ooo.............',
-    '.........oooyyyooo..........',
+    '.........ooolllooo..........',
     '........occccccccco.........',
     '.......ocbbbbcbbbbco........',
     '......ocbbbbbcbbbbbcoo......',

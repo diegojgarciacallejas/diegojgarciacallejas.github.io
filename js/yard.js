@@ -118,11 +118,11 @@ function drawYardBase(ctx, phase) {
   // paso de cebra con sus líneas de parada y los postes de los semáforos (las luces se pintan aparte: cambian)
   for (x = YARD.cross.x0 + 1; x < YARD.cross.x1; x += 4) R(x, 57, 3, 14, '#ece7d9');
   R(YARD.stop.right, 64, 1, 8, '#f3eedc'); R(YARD.stop.left, 56, 1, 8, '#f3eedc');
-  YARD.heads.forEach(function (h) { R(h.x + 2, h.y + 10, 1, h.base - h.y - 10, '#4a5468'); R(h.x + 1, h.base - 1, 3, 1, '#4a5468'); });
+  // (el poste del semáforo de nuestra acera va en primer plano, con las farolas: drawYardFront; solo el de enfrente se queda aquí)
+  var far = YARD.heads[1]; R(far.x + 2, far.y + 10, 1, far.base - far.y - 10, '#4a5468'); R(far.x + 1, far.base - 1, 3, 1, '#4a5468');
   R(0, 72, W, 1, '#a89f90'); R(0, 73, W, 6, '#d6cfc2');
   for (x = 0; x < W; x += 12) R(x, 73, 1, 6, '#c4bcae');
   // farolas en nuestra acera
-  YARD.lamps.forEach(function (lx) { R(lx, 60, 1, 18, '#4a5468'); R(lx - 2, 59, 5, 2, '#4a5468'); R(lx - 1, 61, 3, 1, '#ffe9a8'); R(lx - 1, 77, 3, 1, '#4a5468'); });
   // valla blanca
   R(0, 79, W, 9, '#7cc47c');
   R(0, 81, W, 1, '#d9cdb6'); R(0, 85, W, 1, '#d9cdb6');
@@ -216,6 +216,14 @@ function drawYardGoal(ctx) {
 var CLOUD_ROWS = ['....wwww........', '..wwwwwwww.www..', '.wwwwwwwwwwwwwww', 'wwwwwwwwwwwwwwww', '.ssssssssssssss.'];
 var BALL_ROWS = ['..oooo..', '.owwkwo.', 'owwkkkwo', 'owwwkwwo', 'okwwwwko', 'okkwwkko', '.owwwwo.', '..oooo..'];
 
+/* Lo que está en nuestra acera y por tanto va POR DELANTE de los coches (el carril de abajo pasa por detrás): las farolas y el poste
+   del semáforo. Sin esto, los coches se pintaban encima de ellas. */
+function drawYardFront(ctx) {
+  var p = yardPaint(ctx), R = p.R, near = YARD.heads[0];
+  YARD.lamps.forEach(function (lx) { R(lx, 60, 1, 18, '#4a5468'); R(lx - 2, 59, 5, 2, '#4a5468'); R(lx - 1, 61, 3, 1, '#ffe9a8'); R(lx - 1, 77, 3, 1, '#4a5468'); });
+  R(near.x + 2, near.y + 10, 1, near.base - near.y - 10, '#4a5468'); R(near.x + 1, near.base - 1, 3, 1, '#4a5468');
+}
+
 /* gente que pasea (de perfil, mirando a la derecha; dos fotogramas: a = paso, b = piernas juntas).
    h pelo, s piel, k ojo, t ropa, T manga, p pantalón, o zapatos, c bastón */
 var WALKERS = {
@@ -256,17 +264,20 @@ function ensureYardTextures(scene) {
     tx.addCanvas('yard_base', canvas(function (c) { drawYardBase(c, 'day'); }));
     tx.addCanvas('yard_lights', canvas(drawYardLights));
     tx.addCanvas('yard_tree', canvas(drawYardTree));
+    tx.addCanvas('yard_front', canvas(drawYardFront));
     tx.addCanvas('yard_goal', canvas(drawYardGoal));
   }
   // coches: cada modelo (cars.js) en cada color; los que no cambian de color (taxi, policía, autobús), una sola vez
   CAR_MODELS.forEach(function (m) {
-    (m.kind === 'fixed' ? [null] : CAR_BODY).forEach(function (b, i) {
-      var pal = Object.assign({}, CAR_PAL, m.pal || {}); if (b) { pal.c = b[0]; pal.C = b[1]; }
+    (m.alts || (m.kind === 'fixed' ? [null] : CAR_BODY)).forEach(function (b, i) {
+      var pal = Object.assign({}, CAR_PAL, m.pal || {}); if (b && b.length) { pal.c = b[0]; pal.C = b[1]; } else if (b) Object.assign(pal, b);
       makeTexture(scene, 'car_' + m.id + '_' + i, m.rows, pal);
     });
   });
   makeTexture(scene, 'cloud', CLOUD_ROWS, { w: '#ffffff', s: '#e3f2fc' });
   makeTexture(scene, 'ball', BALL_ROWS, { o: '#2b1d2e', w: '#fffaf0', k: '#2b1d2e' });
+  // el brazo levantado de quien pide un taxi: una mano y la manga de su ropa
+  WALKER_LOOKS.forEach(function (look, i) { makeTexture(scene, 'arm' + i, ['s', 's', 'T', 'T', 'T'], { s: look.s, T: look.T }); });
   // gente: cada tipo con cada aspecto (los abuelos con canas)
   Object.keys(WALKERS).forEach(function (kind) {
     WALKER_LOOKS.forEach(function (look, i) {
@@ -324,6 +335,7 @@ var Yard = new Phaser.Class({
     for (var i = 0; i < (night ? 1 : 3); i++) this.spawnWalker(i % 2, Math.random() * YARD.W);
     // árbol con columpio (y un niño columpiándose) y la portería con su balón
     this.add.image(0, 0, 'yard_tree').setOrigin(0).setScale(S).setDepth(10 + YARD.tree.foot);
+    this.add.image(0, 0, 'yard_front').setOrigin(0).setScale(S).setDepth(5);   // farolas por delante de los coches
     var sw = YARD.swing, ropes = this.add.graphics();
     ropes.fillStyle(0xe2d8c6, 1).fillRect(-5 * S, 0, S, 20 * S).fillRect(4 * S, 0, S, 20 * S);
     ropes.fillStyle(0x8a5a32, 1).fillRect(-7 * S, 20 * S, 14 * S, 2 * S);
@@ -410,7 +422,7 @@ var Yard = new Phaser.Class({
       m = null;
       this.walkers.forEach(function (w) {
         var cx = w.ax + 4;
-        if (w.side === 1 && cx > 8 && cx < 292 && Math.abs(cx - pl.x) < 24 && (!m || Math.abs(cx - pl.x) < Math.abs(m.ax + 4 - pl.x))) m = w;
+        if (w.side === 1 && !w.hail && cx > 8 && cx < 292 && Math.abs(cx - pl.x) < 24 && (!m || Math.abs(cx - pl.x) < Math.abs(m.ax + 4 - pl.x))) m = w;
       });
       this.talkTo = m;
     }
@@ -423,7 +435,7 @@ var Yard = new Phaser.Class({
   walkerAt: function (sx, sy) {
     var x = sx / STAGE.S, y = sy / STAGE.S, foot = YARD.walks[1].y;
     // si se cruzan dos, la que esté más cerca del clic
-    return this.walkers.filter(function (w) { return w.side === 1 && x >= w.ax - 1 && x <= w.ax + 10 && y >= foot - w.h - 2 && y <= foot + 1; })
+    return this.walkers.filter(function (w) { return w.side === 1 && !w.hail && x >= w.ax - 1 && x <= w.ax + 10 && y >= foot - w.h - 2 && y <= foot + 1; })
       .sort(function (a, b) { return Math.abs(a.ax + 4.5 - x) - Math.abs(b.ax + 4.5 - x); })[0] || null;
   },
   /* hablar con quien pasa: se para, se gira y dice una frase al azar según sea niño, adulto o mayor (people.js) */
@@ -456,8 +468,11 @@ var Yard = new Phaser.Class({
     var x = L.dir > 0 ? -len - 2 : YARD.W + 4, v0 = m.speed[0] + Math.random() * (m.speed[1] - m.speed[0]);
     var front = L.dir > 0 ? x + len : -x;
     if (this.cars.some(function (c) { return c.dir === L.dir && self.carRear(c) < front + 12; })) return false;   // el anterior aún está en la entrada
+    var free = m.id === 'taxi' && Math.random() < 0.7;                                    // un taxi va libre (luz verde) o con pasajero
+    if (m.id === 'taxi') variant = free ? 0 : 1;
     var im = this.add.image(x * S, L.y * S, 'car_' + m.id + '_' + variant).setOrigin(0, 1).setScale(S).setFlipX(L.dir < 0).setDepth(3 + lane);
     im.ax = x; im.v0 = v0; im.v = v0 * 0.6; im.dir = L.dir; im.len = len; im.lane = lane; im.committed = false;
+    im.taxi = m.id === 'taxi'; im.free = free; im.willPick = free && Math.random() < 0.5; im.pick = null; im.phase = null;
     if (this.phase === 'night') im.light = glow(this, 0, (L.y - 4) * S, 9 * S, 0xfff2b0, 0.7).setScale(9 * S / 32, 3 * S / 32);   // faros
     this.cars.push(im);
     return true;
@@ -481,6 +496,7 @@ var Yard = new Phaser.Class({
         else vt = Math.min(vt, Math.max(0, dist * 2.5 - 1.5));
       }
     }
+    if (c.pick) vt = Math.min(vt, this.pickupSpeed(c, dt));                            // un taxi que va a recoger a alguien
     var dv = vt - c.v, sec = dt / 1000;
     c.v = Math.max(0, c.v + Math.max(-220 * sec, Math.min(60 * sec, dv)));
     c.ax += c.dir * c.v * sec;
@@ -488,6 +504,43 @@ var Yard = new Phaser.Class({
       var f = this.carRear(lead) - 1;
       c.ax = c.dir > 0 ? f - c.len : -f; c.v = Math.min(c.v, lead.v);
     }
+  },
+  /* ---- taxis: a veces alguien de la acera levanta el brazo; el taxi (si va libre) para a su altura, sube y sigue.
+     Los coches de detrás lo esperan solos (frenan por el de delante). ---- */
+  /* ¿hay algún taxi libre que se acerque a alguien que pueda pedirlo? Si sí, esa persona se para y levanta el brazo */
+  hailCheck: function () {
+    var self = this, now = this.time.now;
+    this.cars.forEach(function (c) {
+      if (!c.taxi || !c.willPick || c.pick || c.phase) return;
+      var best = null, bd = Infinity, front = c.dir > 0 ? c.ax + c.len : c.ax;
+      self.walkers.forEach(function (w) {
+        var xc = w.ax + 4, ahead = c.dir > 0 ? xc - front : front - xc;
+        if (w.side !== c.lane || w.hail || w.talking || w === self.talkTo || now < w.hold || w.boarding) return;
+        if (ahead < 55 || ahead > 170 || xc < 14 || xc > YARD.W - 14) return;                  // que le dé tiempo a frenar y que se vea
+        if (Math.abs(xc - (YARD.cross.x0 + YARD.cross.x1) / 2) < 12 + c.len / 2 + 6) return;      // no encima del paso de cebra
+        if (ahead < bd) { bd = ahead; best = w; }
+      });
+      if (!best) return;
+      best.hail = c; best.hailT = 0; c.pick = best; c.willPick = false;
+      best.arm = self.add.image(0, 0, 'arm' + best.look).setOrigin(0.5, 1).setScale(best.scaleX).setDepth(best.depth + 0.1);
+    });
+  },
+  /* la velocidad máxima del taxi para parar justo donde espera quien lo pidió; al llegar, el pasajero sube */
+  pickupSpeed: function (c, dt) {
+    var w = c.pick;
+    if (!w || !w.active || w.hail !== c) { c.pick = null; c.phase = null; return c.v0; }
+    var xc = w.ax + 4, target = c.dir > 0 ? xc + c.len / 2 : c.len / 2 - xc, dist = target - this.carFront(c);
+    if (c.phase === 'wait') {
+      c.waitT += dt;
+      if (c.waitT > 1100) {                                                                    // el pasajero ya está dentro: el taxi pasa a ocupado y arranca
+        c.setTexture('car_taxi_1'); c.free = false; c.pick = null; c.phase = null; w.gone = true;
+        return c.v0;
+      }
+      return 0;
+    }
+    if (dist < 1.2 && c.v < 4) { c.phase = 'wait'; c.waitT = 0; w.boarding = true; return 0; }
+    if (dist < -8) { w.hail = null; c.pick = null; return c.v0; }                              // se pasó (por algún semáforo): lo deja
+    return Math.max(0, dist * 2.5 - 1.5);
   },
   /* el semáforo: dos postes, uno a cada lado de la calle; el mismo color en los dos (pasa la gente por el paso de cebra) */
   makeLights: function (glows) {
@@ -518,7 +571,7 @@ var Yard = new Phaser.Class({
     var im = this.add.image(x * S, W.y * S, 'walk_' + kind + look + 'a').setOrigin(0, 1).setScale(W.scale).setFlipX(dir < 0).setDepth(side ? 6 : 2);
     im.ax = x; im.v = dir * (sp[0] + Math.random() * (sp[1] - sp[0])) * (side ? 1 : 0.7); im.key = 'walk_' + kind + look; im.t = Math.random();
     var names = PEOPLE.names[kind];
-    im.side = side; im.kind = kind; im.h = WALKERS[kind].head.length + WALKERS[kind].a.length; im.name = names[Math.floor(Math.random() * names.length)];
+    im.look = look; im.side = side; im.kind = kind; im.h = WALKERS[kind].head.length + WALKERS[kind].a.length; im.name = names[Math.floor(Math.random() * names.length)];
     this.walkers.push(im);
   },
 
@@ -540,6 +593,7 @@ var Yard = new Phaser.Class({
     for (var li = 0, acc = 0; li < YARD.light.length; li++) { acc += YARD.light[li][1]; if (pos < acc) { st = YARD.light[li][0]; break; } }
     if (st !== this.lightState) this.setLight(st);
     this.nextCar = this.nextCar.map(function (w, lane) { w -= dt; if (w <= 0) { w = self.spawnCar(lane) ? (1600 + Math.random() * 2800) * self.calm : 400; } return w; });
+    this.hailTimer = (this.hailTimer || 0) - dt; if (this.hailTimer <= 0) { this.hailTimer = 350; this.hailCheck(); }
     this.cars.forEach(function (c) { self.driveCar(c, dt); });
     this.cars = this.cars.filter(function (c) {
       c.x = Math.round(c.ax) * S;
@@ -550,6 +604,19 @@ var Yard = new Phaser.Class({
     // gente paseando, con su paso
     this.nextWalker = this.nextWalker.map(function (w, side) { w -= dt; if (w <= 0) { self.spawnWalker(side); w = (2500 + Math.random() * 4000) * self.calm; } return w; });
     this.walkers = this.walkers.filter(function (m) {
+      if (m.gone) { if (m.arm) m.arm.destroy(); m.destroy(); return false; }
+      if (m.hail) {                                                                            // pide un taxi: parado, mirando hacia donde viene, con el brazo en alto
+        m.hailT += dt;
+        if (m.hailT > 12000 || !m.hail.active || m.hail.pick !== m) {                           // nadie para: sigue andando
+          if (m.arm) m.arm.destroy(); m.arm = null; m.hail = null; m.boarding = false; m.setAlpha(1);
+        } else {
+          var face = m.hail.dir > 0;                                                           // el taxi viene del lado contrario a su marcha
+          m.setTexture(m.key + 'b').setFlipX(face);
+          if (m.boarding) m.setAlpha(Math.max(0, m.alpha - dt / 700));                           // se sube: se desvanece junto al coche
+          m.arm.setPosition(m.x + (face ? 0.5 : m.width - 0.5) * m.scaleX, m.y - (m.h - 6) * m.scaleX).setAlpha(m.alpha).setFlipX(false);
+          return true;
+        }
+      }
       if (m.talking || time < m.hold) { m.setTexture(m.key + 'b').setFlipX(self.player.x < m.ax + 4); return true; }   // parado, mirando a Diego
       m.setFlipX(m.v < 0);
       m.ax += m.v * dt / 1000; m.t += dt / 1000 * Math.abs(m.v) / 6; m.x = Math.round(m.ax * S);
