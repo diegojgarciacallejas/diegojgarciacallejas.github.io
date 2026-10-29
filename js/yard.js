@@ -470,7 +470,9 @@ var Yard = new Phaser.Class({
     if (this.cars.some(function (c) { return c.dir === L.dir && self.carRear(c) < front + 12; })) return false;   // el anterior aún está en la entrada
     var free = m.id === 'taxi' && Math.random() < 0.7;                                    // un taxi va libre (luz verde) o con pasajero
     if (m.id === 'taxi') variant = free ? 0 : 1;
-    var im = this.add.image(x * S, L.y * S, 'car_' + m.id + '_' + variant).setOrigin(0, 1).setScale(S).setFlipX(L.dir < 0).setDepth(3 + lane);
+    // si por lo que sea falta ese dibujo (un archivo viejo en la caché), se usa el primero del modelo: nunca el cuadro negro de «falta imagen»
+    var key = 'car_' + m.id + '_' + variant; if (!this.textures.exists(key)) key = 'car_' + m.id + '_0';
+    var im = this.add.image(x * S, L.y * S, key).setOrigin(0, 1).setScale(S).setFlipX(L.dir < 0).setDepth(3 + lane);
     im.ax = x; im.v0 = v0; im.v = v0 * 0.6; im.dir = L.dir; im.len = len; im.lane = lane; im.committed = false;
     im.taxi = m.id === 'taxi'; im.free = free; im.willPick = free && Math.random() < 0.5; im.pick = null; im.phase = null;
     if (this.phase === 'night') im.light = glow(this, 0, (L.y - 4) * S, 9 * S, 0xfff2b0, 0.7).setScale(9 * S / 32, 3 * S / 32);   // faros
@@ -533,7 +535,7 @@ var Yard = new Phaser.Class({
     if (c.phase === 'wait') {
       c.waitT += dt;
       if (c.waitT > 1100) {                                                                    // el pasajero ya está dentro: el taxi pasa a ocupado y arranca
-        c.setTexture('car_taxi_1'); c.free = false; c.pick = null; c.phase = null; w.gone = true;
+        if (this.textures.exists('car_taxi_1')) c.setTexture('car_taxi_1'); c.free = false; c.pick = null; c.phase = null; w.gone = true;
         return c.v0;
       }
       return 0;
